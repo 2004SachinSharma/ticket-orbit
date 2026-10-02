@@ -77,7 +77,7 @@ Redis, Kafka and WebSocket starters are already in `pom.xml` but are **not used 
 ### 1. Clone
 
 ```bash
-git clone https://github.com/<your-username>/ticket-orbit.git
+git clone https://github.com/2004SachinSharma/ticket-orbit.git
 cd ticket-orbit
 ```
 
