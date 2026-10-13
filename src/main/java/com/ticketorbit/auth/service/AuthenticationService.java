@@ -11,17 +11,20 @@ import com.ticketorbit.user.entity.User;
 import com.ticketorbit.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.file.attribute.UserPrincipalNotFoundException;
+import java.util.Optional;
+
+import static io.lettuce.core.KillArgs.Builder.id;
 
 
 @Service
@@ -76,5 +79,19 @@ public LoginResponseDto loginUser(LoginRequestDto loginRequestDto) {
 		return new LoginResponseDto(token, user);
 }
 
+public UserDto getAuthUser() {
+	
+	Authentication authentication =
+			SecurityContextHolder.getContext().getAuthentication();
+	
+	Long id = Long.valueOf(authentication.getPrincipal().toString());
+	
+	User user = userRepository.findById(id)
+			            .orElseThrow(() -> new UsernameNotFoundException(
+					            "Authenticated user not found with id: " + id
+			            ));
+	
+	return UserDto.from(user);
+}
 
 }
