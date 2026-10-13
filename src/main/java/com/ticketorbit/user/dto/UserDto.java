@@ -5,7 +5,7 @@ import com.ticketorbit.user.entity.User;
 
 
 public record UserDto(
-		 Long id,String Name, String email, Role role) {
+		 Long id,String name, String email, Role role) {
 public static UserDto from(User user) {
 	return new UserDto( user.getId(),user.getName(), user.getEmail(), user.getRole());
 }
