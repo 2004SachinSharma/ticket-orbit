@@ -3,7 +3,8 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from './ProtectedRoute'
-import DashboardPage from './pages/DashboardPage'
+import DashboardPage from './pages/DashBoardPage'
+import AdminPage from './pages/AdminPage'
 
 function App() {
 return (
@@ -15,8 +16,12 @@ return (
 
           <Route path="/" element={<Navigate to="/login/public" replace />} />
 
-          <Route path="*" element={<Navigate to="/login/public" replace />} />
+            <Route path="*" element={<Navigate to="/login/public" replace />} />
             <Route path="/dashboard" element={ <ProtectedRoute> <DashboardPage /> </ProtectedRoute> } />
+            <Route path="/admin" element={ <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminPage />
+            </ProtectedRoute> } />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
