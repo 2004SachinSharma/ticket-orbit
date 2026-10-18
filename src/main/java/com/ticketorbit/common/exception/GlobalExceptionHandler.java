@@ -1,7 +1,10 @@
 package com.ticketorbit.common.exception;
 
+import com.ticketorbit.auth.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.AuthenticationException;
@@ -67,12 +70,33 @@ public ResponseEntity<ErrorResponse> handleNoResource(
     
     return ResponseEntity.badRequest().body(
             ErrorResponse.of(
-                    400,
+                    404,
                     "INVALID_ENDPOINT",
                     "Requested endpoint does not exist",
                     req.getRequestURI()
             )
     );
+}
+@ExceptionHandler(ResourceNotFoundException.class)
+public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest req) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+            ErrorResponse.of(
+                    404,
+                    "RESOURCE_NOT_FOUND",
+                    ex.getMessage(),
+                    req.getRequestURI()
+            )
+    );
+}
+
+@ExceptionHandler(PropertyReferenceException.class)
+public ResponseEntity<ErrorResponse> handleInvalidSort(PropertyReferenceException ex, HttpServletRequest request) {
+    ErrorResponse error = new ErrorResponse(
+            Instant.now(), 400, "INVALID_SORT_FIELD",
+            "Invalid sort field: " + ex.getPropertyName(),
+            request.getRequestURI(), List.of()
+    );
+    return ResponseEntity.badRequest().body(error);
 }
 
 // All that could not be caught in the above specific exceptions will be handled here
