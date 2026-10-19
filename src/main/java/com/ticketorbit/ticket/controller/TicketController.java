@@ -24,10 +24,10 @@ return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket
 }
 
 @GetMapping()
-ResponseEntity<PageResponseDto> getTicketWithSortingAndpagination(@RequestParam(defaultValue = "createdAt", name="sortby") String sortBy,
-                                                                          @RequestParam(defaultValue = "asc", name="sortdir") String sortDir,
-                                                                          @RequestParam(defaultValue = "0", name="pagenumber") int pageNumber,
-                                                                          @RequestParam(defaultValue = "3", name="pagesize") int pageSize){
+ResponseEntity<PageResponseDto> getTicketWithSortingAndpagination(@RequestParam(defaultValue = "createdAt", name="sortBy") String sortBy,
+                                                                          @RequestParam(defaultValue = "asc", name="sortDir") String sortDir,
+                                                                          @RequestParam(defaultValue = "0", name="pageNumber") int pageNumber,
+                                                                          @RequestParam(defaultValue = "3", name="pageSize") int pageSize){
 	return ResponseEntity.ok(ticketService.getTickets(sortBy, sortDir, pageNumber, pageSize));
 }
 
