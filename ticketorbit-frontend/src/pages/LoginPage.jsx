@@ -3,39 +3,52 @@ import { Link, useNavigate  } from 'react-router-dom'
 import '../App.css'
 import api from '../api/axios'
 import { useAuth } from '../auth/AuthContext'
+import TicketOrbitLogo from '../components/logo.jsx'
 
 function LoginPage({ onRegister }) {
   const { setUser } = useAuth()
   const {user} = useAuth()
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   console.log('name is '+ user?.name)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
   const handleSubmit = async (event) => {
     event.preventDefault()
+    setError('')
+    setSubmitting(true)
 
-    const response = await api.post('/api/v1/auth/login/public',
-      {
-        email: email,
-        password: password
+    try {
+      const response = await api.post('/api/v1/auth/login/public', {
+        email: email.trim(),
+        password,
       })
-    localStorage.setItem('token', response.data.token)
-    setUser(response.data.user)
-    navigate('/dashboard')
 
-    console.log('something here ', response.data.user.name)
+      localStorage.setItem('token', response.data.token)
+      setUser(response.data.user)
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      const status = err.response?.status
 
-    console.log('Login submitted:', {
-      email,
-      password,
-    })
+      if (status === 401 || status === 400) {
+        setError('Invalid username or password.')
+      } else {
+        setError(
+            err.response?.data?.message ||
+            'Unable to sign in right now. Please try again.'
+        )
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
     <main className="app">
       <section className="auth-container">
         <div className="brand-section">
-          <div className="brand-logo">TO</div>
+         <TicketOrbitLogo />
 
           <h1>TicketOrbit</h1>
 
@@ -45,7 +58,6 @@ function LoginPage({ onRegister }) {
             Resolve issues. Keep customers moving.
           </p>
 
-          <h3> Hello <span style={{ color: 'red',fontFamily:'monospace',fontStyle:'italic' }} >{user?.name || 'Guest'} </span></h3>
         </div>
 
         <div className="auth-card">
@@ -84,8 +96,18 @@ function LoginPage({ onRegister }) {
               />
             </div>
 
-            <button type="submit" className="auth-button">
-              Sign in
+            {error && (
+                <div className="auth-error" role="alert">
+                  {error}
+                </div>
+            )}
+
+            <button
+                type="submit"
+                className="auth-button"
+                disabled={submitting}
+            >
+              {submitting ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 
