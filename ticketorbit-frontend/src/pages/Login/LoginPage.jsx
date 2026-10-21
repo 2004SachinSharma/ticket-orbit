@@ -3,7 +3,7 @@ import { Link, useNavigate  } from 'react-router-dom'
 import '../App.css'
 import api from '../api/axios'
 import { useAuth } from '../auth/AuthContext'
-import TicketOrbitLogo from '../components/logo.jsx'
+import TicketOrbitLogo from '../components/Logo/Logo.jsx'
 
 function LoginPage({ onRegister }) {
   const { setUser } = useAuth()
