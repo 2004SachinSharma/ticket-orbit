@@ -1,4 +1,5 @@
-import './logo.css'
+import module from './Logo.module.css';
+
 export default function TicketOrbitLogo(){
-   return <div className="brand-logo">TO</div>
+   return <div className={module.brandLogo}>TO</div>
 }
