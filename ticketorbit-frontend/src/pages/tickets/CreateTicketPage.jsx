@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios.js'
 import './CreateTicketPage.css'
+import TicketOrbitLogo from "../../components/Logo/Logo.jsx";
 
 function CreateTicketPage() {
     const navigate = useNavigate()
@@ -81,7 +82,7 @@ function CreateTicketPage() {
     return (
         <div className="create-ticket-layout">
             <aside className="create-ticket-sidebar">
-                <h2>TicketOrbit</h2>
+                <TicketOrbitLogo />
 
                 <p>WORKSPACE</p>
 

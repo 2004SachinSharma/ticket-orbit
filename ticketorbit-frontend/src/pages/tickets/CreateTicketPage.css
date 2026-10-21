@@ -3,7 +3,6 @@
     min-height: 100vh;
     background: #f8fafc;
     color: #1e293b;
-    font-family: Inter, Arial, sans-serif;
 }
 
 /* Sidebar */
@@ -19,12 +18,6 @@
     color: #f9fafb;
 }
 
-.create-ticket-sidebar h2 {
-    margin: 0 0 38px;
-    padding-left: 10px;
-    font-size: 22px;
-    font-weight: 700;
-}
 
 .create-ticket-sidebar p {
     margin: 0 0 8px;
@@ -63,6 +56,7 @@
     flex: 1;
     min-width: 0;
     padding: 38px 42px;
+    font-family: Inter, Arial, sans-serif;
 }
 
 .create-ticket-header {

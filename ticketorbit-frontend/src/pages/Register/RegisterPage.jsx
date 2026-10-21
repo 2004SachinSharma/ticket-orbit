@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import '../App.css'
-import api from '../api/axios.js'
-import TicketOrbitLogo from '../components/logo.jsx'
+import '../../App.css'
+import api from '../../api/axios.js'
+import TicketOrbitLogo from '../../components/Logo/Logo'
 
 function RegisterPage() {
   const [name, setName] = useState('')
