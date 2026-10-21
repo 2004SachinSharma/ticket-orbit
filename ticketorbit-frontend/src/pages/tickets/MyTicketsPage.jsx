@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router-dom'
 import api from '../../api/axios.js'
 import './MyTicketPage.css'
 import {useAuth} from "../../auth/AuthContext.jsx";
-import TicketOrbitLogo from "../../components/logo.jsx";
+import TicketOrbitLogo from "../../components/Logo/Logo.jsx";
 
 function MyTicketsPage() {
     const navigate = useNavigate()

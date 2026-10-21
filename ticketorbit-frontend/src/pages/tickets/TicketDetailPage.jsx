@@ -1,18 +1,26 @@
-import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import {useEffect, useState} from 'react'
+import {useNavigate, useParams} from 'react-router-dom'
 import api from '../../api/axios'
 import './TicketDetailPage.css'
 import {useAuth} from "../../auth/AuthContext.jsx";
-import TicketOrbitLogo from "../../components/logo.jsx";
+import TicketOrbitLogo from "../../components/Logo/logo.jsx";
 
 function TicketDetailPage() {
-    const { ticketId } = useParams()
+    const {ticketId} = useParams()
     const navigate = useNavigate()
     const {user} = useAuth()
 
     const [ticket, setTicket] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+
+
+    const [messages, setMessages] = useState([])
+    const [messagesLoading, setMessagesLoading] = useState(true)
+    const [messageError, setMessageError] = useState('')
+    const [messageBody, setMessageBody] = useState('')
+    const [messageType, setMessageType] = useState('PUBLIC')
+    const [sending, setSending] = useState(false)
 
     useEffect(() => {
         const fetchTicket = async () => {
@@ -31,10 +39,61 @@ function TicketDetailPage() {
                 setLoading(false)
             }
         }
-console.log("llllloooo",ticketId)
+        console.log("llllloooo", ticketId)
         fetchTicket()
     }, [ticketId])
 
+    useEffect(() => {
+        const fetchMessages = async () => {
+            setMessagesLoading(true)
+            setMessageError('')
+
+            try {
+                const response = await api.get(
+                    `/api/v1/tickets/${ticketId}/messages`
+                )
+                setMessages(response.data)
+            } catch (err) {
+                setMessageError(
+                    err.response?.data?.message || 'Messages load nahi ho paye.'
+                )
+            } finally {
+                setMessagesLoading(false)
+            }
+        }
+
+        if (ticketId) {
+            fetchMessages()
+        }
+    }, [ticketId])
+
+    const handleSendMessage = async (e) => {
+        e.preventDefault()
+
+        if (!messageBody.trim()) return
+
+        setSending(true)
+        setMessageError('')
+
+        try {
+            const response = await api.post(
+                `/api/v1/tickets/${ticketId}/messages`,
+                {
+                    body: messageBody.trim(),
+                    type: messageType,
+                }
+            )
+
+            setMessages((previous) => [...previous, response.data])
+            setMessageBody('')
+        } catch (err) {
+            setMessageError(
+                err.response?.data?.message || 'Message send nahi ho paya.'
+            )
+        } finally {
+            setSending(false)
+        }
+    }
     const formatDate = (date) => {
         if (!date) return '—'
 
@@ -51,12 +110,12 @@ console.log("llllloooo",ticketId)
         value?.replaceAll('_', ' ') || '—'
 
     if (loading) {
-        return <div style={{ padding: '32px' }}>Loading ticket...</div>
+        return <div style={{padding: '32px'}}>Loading ticket...</div>
     }
 
     if (error || !ticket) {
         return (
-            <div style={{ padding: '32px' }}>
+            <div style={{padding: '32px'}}>
                 <p role="alert">{error || 'Ticket not found.'}</p>
                 <button onClick={() => navigate('/tickets')}>
                     Back to My Tickets
@@ -68,7 +127,7 @@ console.log("llllloooo",ticketId)
     return (
         <div className="ticket-detail-layout">
             <aside className="ticket-detail-sidebar">
-                <TicketOrbitLogo />
+                <TicketOrbitLogo/>
                 <p>WORKSPACE</p>
 
                 <button onClick={() => navigate('/tickets')}>
@@ -125,13 +184,77 @@ console.log("llllloooo",ticketId)
                                 <p>{formatDate(ticket.createdAt)}</p>
                             </div>
                         </div>
+                        <div className="ticket-messages-section">
+                            <div className="ticket-section-heading">
+                                <h2>Conversation</h2>
+                                <span>{messages.length} messages</span>
+                            </div>
 
-                        <div className="ticket-info-notice">
-                            <strong>Need to add more information?</strong>
-                            <p>
-                                Conversation replies will be available once the ticket
-                                messaging feature is implemented.
-                            </p>
+                            {messagesLoading ? (
+                                <p>Loading messages...</p>
+                            ) : messageError && messages.length === 0 ? (
+                                <p role="alert">{messageError}</p>
+                            ) : messages.length === 0 ? (
+                                <p>No messages yet. Start the conversation below.</p>
+                            ) : (
+                                <div className="ticket-messages-list">
+                                    {messages.map((message) => (
+                                        <article className="ticket-message" key={message.id}>
+                                            <div className="ticket-message-header">
+                                                <strong>{message.senderName}</strong>
+                                                <span>{formatDate(message.createdAt)}</span>
+                                            </div>
+
+                                            {message.type === 'INTERNAL_NOTE' && (
+                                                <span className="internal-note-label">
+                            Internal Note
+                        </span>
+                                            )}
+
+                                            <p>{message.body}</p>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+
+                            {messageError && messages.length > 0 && (
+                                <p role="alert">{messageError}</p>
+                            )}
+
+                            <form onSubmit={handleSendMessage} className="ticket-message-form">
+                                <label htmlFor="messageBody">Your message</label>
+
+                                <textarea
+                                    id="messageBody"
+                                    value={messageBody}
+                                    onChange={(e) => setMessageBody(e.target.value)}
+                                    placeholder="Write your reply..."
+                                    rows={4}
+                                    maxLength={5000}
+                                    required
+                                />
+
+                                {(user?.role === 'AGENT' || user?.role === 'ADMIN') && (
+                                    <div>
+                                        <label htmlFor="messageType">Message type</label>
+                                        <select
+                                            id="messageType"
+                                            value={messageType}
+                                            onChange={(e) => setMessageType(e.target.value)}
+                                        >
+                                            <option value="PUBLIC">Public Reply</option>
+                                            <option value="INTERNAL_NOTE">Internal Note</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={sending || !messageBody.trim()}
+                                >
+                                    {sending ? 'Sending...' : 'Send Message'}
+                                </button>
+                            </form>
                         </div>
                     </section>
 
