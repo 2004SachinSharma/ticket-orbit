@@ -15,7 +15,7 @@ public record CustomerTicketResponseDto(
         TicketStatus status,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
-) {
+) implements TicketResponseDto {
 	
 	public static CustomerTicketResponseDto from(Ticket ticketResponse) {
 		return new CustomerTicketResponseDto(

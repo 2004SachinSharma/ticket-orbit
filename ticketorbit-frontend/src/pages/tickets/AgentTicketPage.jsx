@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../api/axios.js'
-// Reuses MyTicketPage.css on purpose — same class names (tickets-layout,
-// tickets-sidebar, tickets-table...), so the agent list looks consistent
-// with the customer list without duplicating CSS. If you ever need the
-// agent page to diverge visually, fork this import into its own file.
+
 import './MyTicketPage.css'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import TicketOrbitLogo from '../../components/Logo/Logo.jsx'

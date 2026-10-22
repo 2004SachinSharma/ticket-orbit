@@ -17,7 +17,7 @@ return (
         <Routes>
           <Route path="/login/public" element={ <LoginPage /> } />
           <Route path="/register/public" element={<RegisterPage />  } />
-          <Route path="/tickets" element={<ProtectedRoute> <MyTicketsPage /> </ProtectedRoute>} />
+          <Route path="/tickets" element={<ProtectedRoute allowedRoles={['CUSTOMER']} > <MyTicketsPage /> </ProtectedRoute>} />
           <Route path="/tickets/new" element={<ProtectedRoute> <CreateTicketPage /> </ProtectedRoute>} />
           <Route path="/tickets/:ticketId" element={<ProtectedRoute> <TicketDetailPage /> </ProtectedRoute> } />
 

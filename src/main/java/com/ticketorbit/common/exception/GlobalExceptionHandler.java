@@ -99,6 +99,17 @@ public ResponseEntity<ErrorResponse> handleInvalidSort(PropertyReferenceExceptio
     return ResponseEntity.badRequest().body(error);
 }
 
+@ExceptionHandler(InvalidStateTransitionException.class)
+public ResponseEntity<ErrorResponse> handleInvalidState(InvalidStateTransitionException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse(
+                Instant.now(), 409,"INVALID_TICKET_STATE",
+                "requested ticket cannot be reassigned",
+                request.getRequestURI(), List.of()
+        );
+        
+        return ResponseEntity.badRequest().body(error);
+}
+
 // All that could not be caught in the above specific exceptions will be handled here
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest req) {

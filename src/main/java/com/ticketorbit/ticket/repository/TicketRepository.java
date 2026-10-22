@@ -20,4 +20,7 @@ public Page<Ticket> findAllByCreatedBy(User user, Pageable pageRequest);
 
 @EntityGraph(attributePaths = {"category", "createdBy", "assignedTo"})
 public Optional<Ticket> findById(long id);
+
+@EntityGraph(attributePaths = {"category", "createdBy", "assignedTo"})
+public Page<Ticket> findAllByAssignedTo(User user, Pageable pageRequest);
 }
