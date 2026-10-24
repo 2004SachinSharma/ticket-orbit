@@ -2,6 +2,7 @@ package com.ticketorbit.common.exception;
 
 import com.ticketorbit.auth.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -99,16 +101,28 @@ public ResponseEntity<ErrorResponse> handleInvalidSort(PropertyReferenceExceptio
     return ResponseEntity.badRequest().body(error);
 }
 
+@ExceptionHandler(ConstraintViolationException.class)
+public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest req) {
+    List<ErrorResponse.FieldIssue> issues = ex.getConstraintViolations().stream()
+                                                    .map(v -> new ErrorResponse.FieldIssue(v.getPropertyPath().toString(), v.getMessage()))
+                                                    .toList();
+    return ResponseEntity.badRequest().body(new ErrorResponse(
+            Instant.now(), 400, "VALIDATION_ERROR", "Validation failed",
+            req.getRequestURI(), issues));
+}
+
+@ExceptionHandler(MissingServletRequestParameterException.class)
+public ResponseEntity<ErrorResponse> handleMissingParam(MissingServletRequestParameterException ex, HttpServletRequest req) {
+    return ResponseEntity.badRequest().body(ErrorResponse.of(
+            400, "VALIDATION_ERROR", ex.getMessage(), req.getRequestURI()));
+}
+
 @ExceptionHandler(InvalidStateTransitionException.class)
 public ResponseEntity<ErrorResponse> handleInvalidState(InvalidStateTransitionException ex, HttpServletRequest request) {
-        ErrorResponse error = new ErrorResponse(
-                Instant.now(), 409,"INVALID_TICKET_STATE",
-                "requested ticket cannot be reassigned",
-                request.getRequestURI(), List.of()
-        );
-        
-        return ResponseEntity.badRequest().body(error);
-}
+    return  ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ErrorResponse.of(409, "INVALID_TICKET_STATE", ex.getMessage(), request.getRequestURI())
+    );
+    }
 
 // All that could not be caught in the above specific exceptions will be handled here
     @ExceptionHandler(Exception.class)
