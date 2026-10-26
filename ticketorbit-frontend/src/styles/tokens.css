@@ -1,0 +1,58 @@
+/*
+ * Design tokens for the post-login app (dashboard, tickets, admin).
+ * Namespaced with --to- so these never collide with anything the
+ * Login/Register pages or App.css use (those stay untouched).
+ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* color */
+  --to-bg: #F6F7FA;
+  --to-surface: #FFFFFF;
+  --to-sidebar: #15171F;
+  --to-sidebar-hover: #1F2230;
+  --to-border: #E4E6EC;
+  --to-ink: #15171F;
+  --to-muted: #7a7c85;
+  --to-muted-soft: #9CA3AF;
+  --to-text: #f6f8f8;
+
+  --to-accent: rgb(52 109 222 / 0.67);
+  --to-accent-dark: #527fd9;
+  --to-accent-soft: #EAF1FE;
+
+  --to-green: #16A34A;   --to-green-soft: #E6F7EC;
+  --to-amber: #B45309;   --to-amber-soft: #FEF3E0;
+  --to-red: #DC2626;     --to-red-soft: #FDEAEA;
+  --to-purple: #7C3AED;  --to-purple-soft: #F3E8FD;
+  --to-slate: #64748B;   --to-slate-soft: #EEF1F5;
+
+  /* spacing scale */
+  --to-space-1: 4px;
+  --to-space-2: 8px;
+  --to-space-3: 12px;
+  --to-space-4: 16px;
+  --to-space-5: 20px;
+  --to-space-6: 24px;
+  --to-space-8: 32px;
+
+  /* radius / shadow */
+  --to-radius-sm: 6px;
+  --to-radius-md: 10px;
+  --to-radius-lg: 14px;
+  --to-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --to-shadow-md: 0 8px 24px -8px rgba(16, 24, 40, 0.12);
+
+  /* type */
+  --to-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.to-app {
+  font-family: var(--to-font);
+  color: var(--to-ink);
+  background: var(--to-bg);
+}
+
+.to-app * {
+  box-sizing: border-box;
+}

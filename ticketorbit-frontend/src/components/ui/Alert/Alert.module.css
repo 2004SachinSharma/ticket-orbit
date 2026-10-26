@@ -1,0 +1,23 @@
+@import '../../../styles/tokens.css';
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--to-radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: var(--to-space-5);
+}
+
+.error {
+  background: var(--to-red-soft);
+  color: var(--to-red);
+}
+
+.success {
+  background: var(--to-green-soft);
+  color: var(--to-green);
+}

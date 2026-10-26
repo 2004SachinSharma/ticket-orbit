@@ -1,0 +1,255 @@
+@import '../../styles/tokens.css';
+
+.backButton {
+  margin-bottom: 12px;
+  padding-left: 0;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--to-space-6);
+}
+
+.breadcrumb {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  color: var(--to-muted);
+  font-weight: 600;
+}
+
+.header h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--to-muted);
+  font-size: 13.5px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.conversationCard,
+.detailsCard {
+  background: var(--to-surface);
+  border: 1px solid var(--to-border);
+  border-radius: var(--to-radius-lg);
+  padding: 24px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.sectionHeading span {
+  font-size: 12px;
+  color: var(--to-muted);
+}
+
+.description {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--to-ink);
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--to-border);
+}
+
+.mutedText {
+  color: var(--to-muted);
+  font-size: 13px;
+}
+
+.messagesList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.profileLetter{
+  border: 1px solid var(--to-muted);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 30px;
+  border-radius: 20px 20px 20px 20px;
+  height: 30px;
+  margin: -13px -5px 5px -15px;
+  font-family: "Wingdings 1";
+  font-weight: bolder;
+  background-color: #eabf70;
+}
+
+.message {
+  border-radius: var(--to-radius-md);
+  padding: 12px 14px;
+  border: 1.5px dashed var(--to-muted);
+  margin-left: -15px;
+}
+.messageYou {
+  border: #7C3AED 1px dashed;
+  border-radius: var(--to-radius-md);
+  padding: 12px 14px;
+  margin-left: 20px;
+
+}
+
+.messageHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.messageHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+
+.messageHeader strong {
+  color: var(--to-text);
+  border: rgb(95 60 222 / 0.74) 1px dashed;
+  padding: 2px 6px;
+  border-radius: var(--to-radius-md);
+  background-color: rgb(93 59 236 / 0.5);
+}
+
+.messageHeader span {
+  color: var(--to-muted);
+}
+
+.message p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--to-ink);
+}
+
+.internalNoteLabel {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--to-amber-soft);
+  color: var(--to-amber);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.messageForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--to-border);
+}
+
+.messageForm label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--to-ink);
+}
+
+.messageForm textarea,
+.messageTypeField select {
+  font-family: var(--to-font);
+  font-size: 13.5px;
+  border: 1.5px solid var(--to-border);
+  border-radius: var(--to-radius-sm);
+  padding: 10px 12px;
+  background: #fff;
+  resize: vertical;
+}
+
+.messageForm textarea:focus,
+.messageTypeField select:focus {
+  outline: none;
+  border-color: var(--to-accent);
+  box-shadow: 0 0 0 3px var(--to-accent-soft);
+}
+
+.messageTypeField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 220px;
+}
+
+.detailsCard h2 {
+  margin: 0 0 16px;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.detailField {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--to-border);
+  font-size: 13px;
+}
+
+.detailField:last-of-type {
+  border-bottom: none;
+}
+
+.detailField span {
+  color: var(--to-muted);
+}
+
+.detailField strong {
+  color: var(--to-ink);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+   .prioritySelect {
+     max-width: 145px;
+     font-family: var(--to-font);
+     font-size: 12.5px;
+     font-weight: 700;
+     color: var(--to-ink);
+     border: 1.5px solid var(--to-border);
+     border-radius: var(--to-radius-sm);
+     padding: 7px 10px;
+     background: var(--to-surface);
+     cursor: pointer;
+   }
+
+.prioritySelect:focus {
+  outline: none;
+  border-color: var(--to-accent);
+  box-shadow: 0 0 0 3px var(--to-accent-soft);
+}
+
+.prioritySelect:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

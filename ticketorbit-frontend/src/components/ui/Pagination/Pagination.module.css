@@ -1,0 +1,23 @@
+@import '../../../styles/tokens.css';
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid var(--to-border);
+  font-size: 13px;
+  color: var(--to-muted);
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pageOf {
+  font-weight: 600;
+}

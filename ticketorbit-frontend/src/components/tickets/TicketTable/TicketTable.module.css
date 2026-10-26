@@ -1,0 +1,60 @@
+@import '../../../styles/tokens.css';
+
+.wrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th {
+  text-align: left;
+  padding: 12px 24px;
+  border-top: 1px solid var(--to-border);
+  border-bottom: 1px solid var(--to-border);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--to-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--to-border);
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: #FAFAFC;
+}
+
+.table td {
+  padding: 14px 24px;
+  font-size: 13.5px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.subject {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subject strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--to-ink);
+  white-space: normal;
+}
+
+.subject span {
+  font-size: 12px;
+  color: var(--to-muted);
+}

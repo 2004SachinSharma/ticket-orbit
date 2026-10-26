@@ -1,0 +1,19 @@
+@import '../styles/tokens.css';
+
+.assignmentControl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.assignmentSelect {
+  height: 34px;
+  border-radius: var(--to-radius-sm);
+  border: 1.5px solid var(--to-border);
+  padding: 0 8px;
+  font-size: 12.5px;
+  font-family: var(--to-font);
+  color: var(--to-ink);
+  background: #fff;
+  max-width: 160px;
+}

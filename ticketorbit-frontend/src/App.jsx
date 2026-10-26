@@ -4,7 +4,7 @@ import RegisterPage from './pages/Register/RegisterPage.jsx'
 import { AuthProvider } from "./auth/AuthContext";
 import ProtectedRoute from './ProtectedRoute'
 import DashboardPage from './pages/DashBoardPage'
-import AdminPage from './pages/AdminPage'
+import AdminTicketAssignmentPage from './pages/AdminTicketAssignmentPage.jsx'
 import MyTicketsPage from "./pages/tickets/MyTicketsPage.jsx";
 import CreateTicketPage from "./pages/tickets/CreateTicketPage.jsx";
 import TicketDetailPage from "./pages/tickets/TicketDetailPage.jsx";
@@ -25,8 +25,8 @@ return (
 
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={ <ProtectedRoute> <DashboardPage /> </ProtectedRoute> } />
-            <Route path="/admin" element={ <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminPage />
+            <Route path="/tickets/admin" element={ <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminTicketAssignmentPage />
             </ProtectedRoute> } />
             <Route path="/tickets/assigned" element={
                 <ProtectedRoute allowedRoles={['AGENT']}>
