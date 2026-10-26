@@ -18,6 +18,16 @@ const TICKETS_ENDPOINT = '/api/v1/tickets'
 const AGENTS_ENDPOINT = '/api/v1/users?role=AGENT'
 const assignTicketEndpoint = (ticketId) => `/api/v1/tickets/${ticketId}/assign`
 
+const STATUSES = [
+  'OPEN',
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'WAITING_FOR_CUSTOMER',
+  'RESOLVED',
+  'CLOSED',
+]
+const PRIORITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW']
+
 const resolveAgentIdByName = (assignedToName, agentList) => {
   if (!assignedToName || !agentList.length) return ''
   const found = agentList.find((a) => (a.name || a.fullName) === assignedToName)
@@ -37,6 +47,10 @@ function AdminTicketAssignmentPage() {
   const [success, setSuccess] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [priorityFilter, setPriorityFilter] = useState('ALL')
+  const [categoryIdFilter, setCategoryIdFilter] = useState('ALL')
+  const [categories, setCategories] = useState([])
+  const [categoriesError, setCategoriesError] = useState('')
   const [assignmentDrafts, setAssignmentDrafts] = useState({})
   const [savingTicketId, setSavingTicketId] = useState(null)
 
@@ -63,7 +77,7 @@ function AdminTicketAssignmentPage() {
       return filteredAgents
     } catch (err) {
       setAgentsError(
-        err.response?.data?.message || 'Agent list could not be loaded.'
+          err.response?.data?.message || 'Agent list could not be loaded.'
       )
       return []
     } finally {
@@ -76,7 +90,15 @@ function AdminTicketAssignmentPage() {
     setError('')
     try {
       const response = await api.get(TICKETS_ENDPOINT, {
-        params: { pageNumber, pageSize, sortBy, sortDir },
+        params: {
+          pageNumber,
+          pageSize,
+          sortBy,
+          sortDir,
+          ...(statusFilter !== 'ALL' && { status: statusFilter }),
+          ...(priorityFilter !== 'ALL' && { priority: priorityFilter }),
+          ...(categoryIdFilter !== 'ALL' && { categoryId: categoryIdFilter }),
+        },
       })
 
       const pageData = response.data
@@ -95,13 +117,30 @@ function AdminTicketAssignmentPage() {
       })
     } catch (err) {
       setError(
-        err.response?.data?.message ||
+          err.response?.data?.message ||
           'Tickets could not be loaded. Check the backend connection and retry.'
       )
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesError('')
+        const response = await api.get('/api/v1/categories')
+        const data = response.data
+        setCategories(Array.isArray(data) ? data : data?.content ?? data?.categories ?? [])
+      } catch (err) {
+        setCategoriesError(
+            err.response?.data?.message || 'Categories could not be loaded.',
+        )
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -116,7 +155,7 @@ function AdminTicketAssignmentPage() {
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageNumber, sortBy, sortDir])
+  }, [pageNumber, sortBy, sortDir, statusFilter, priorityFilter, categoryIdFilter])
 
   const handleRefresh = async () => {
     const loadedAgents = await fetchAgents()
@@ -156,15 +195,15 @@ function AdminTicketAssignmentPage() {
       setSuccess(`Ticket #${ticket.id} assigned successfully.`)
 
       setTickets((prevTickets) =>
-        prevTickets.map((t) =>
-          t.id === ticket.id
-            ? {
-                ...t,
-                assignedToName: res.data?.assignedToName || updatedAgentName,
-                status: res.data?.status || 'ASSIGNED',
-              }
-            : t
-        )
+          prevTickets.map((t) =>
+              t.id === ticket.id
+                  ? {
+                    ...t,
+                    assignedToName: res.data?.assignedToName || updatedAgentName,
+                    status: res.data?.status || 'ASSIGNED',
+                  }
+                  : t
+          )
       )
     } catch (err) {
       setError(err.response?.data?.message || `Ticket #${ticket.id} could not be assigned.`)
@@ -177,16 +216,15 @@ function AdminTicketAssignmentPage() {
     const query = search.trim().toLowerCase()
     return tickets.filter((ticket) => {
       const matchesSearch =
-        !query ||
-        String(ticket.id ?? '').includes(query) ||
-        ticket.subject?.toLowerCase().includes(query) ||
-        ticket.categoryName?.toLowerCase().includes(query) ||
-        ticket.createdByName?.toLowerCase().includes(query)
+          !query ||
+          String(ticket.id ?? '').includes(query) ||
+          ticket.subject?.toLowerCase().includes(query) ||
+          ticket.categoryName?.toLowerCase().includes(query) ||
+          ticket.createdByName?.toLowerCase().includes(query)
 
-      const matchesStatus = statusFilter === 'ALL' || ticket.status === statusFilter
-      return matchesSearch && matchesStatus
+      return matchesSearch
     })
-  }, [tickets, search, statusFilter])
+  }, [tickets, search])
 
   const unassignedCount = tickets.filter((ticket) => !ticket.assignedToName).length
   const assignedCount = tickets.length - unassignedCount
@@ -201,166 +239,208 @@ function AdminTicketAssignmentPage() {
       const isCompletedStatus = ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'
 
       return (
-        <div className={styles.assignmentControl}>
-          <select
-            className={styles.assignmentSelect}
-            value={selectedAgentId}
-            onChange={(event) => handleAssignmentChange(ticket.id, event.target.value)}
-            disabled={agentsLoading || agents.length === 0 || saving || isCompletedStatus}
-            aria-label={`Select agent for ticket ${ticket.id}`}
-          >
-            <option value="">
-              {ticket.assignedToName ? ticket.assignedToName : 'Unassigned'}
-            </option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={String(agent.id)}>
-                {agent.name || agent.fullName || agent.email || `Agent #${agent.id}`}
+          <div className={styles.assignmentControl}>
+            <select
+                className={styles.assignmentSelect}
+                value={selectedAgentId}
+                onChange={(event) => handleAssignmentChange(ticket.id, event.target.value)}
+                disabled={agentsLoading || agents.length === 0 || saving || isCompletedStatus}
+                aria-label={`Select agent for ticket ${ticket.id}`}
+            >
+              <option value="">
+                {ticket.assignedToName ? ticket.assignedToName : 'Unassigned'}
               </option>
-            ))}
-          </select>
+              {agents.map((agent) => (
+                  <option key={agent.id} value={String(agent.id)}>
+                    {agent.name || agent.fullName || agent.email || `Agent #${agent.id}`}
+                  </option>
+              ))}
+            </select>
 
-          <Button
-            variant={changed && !isCompletedStatus ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => handleAssign(ticket)}
-            disabled={!selectedAgentId || saving || agentsLoading || !changed || isCompletedStatus}
-          >
-            {saving ? 'Saving…' : isCompletedStatus ? 'Locked' : ticket.assignedToName ? 'Reassign' : 'Assign'}
-          </Button>
-        </div>
+            <Button
+                variant={changed && !isCompletedStatus ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => handleAssign(ticket)}
+                disabled={!selectedAgentId || saving || agentsLoading || !changed || isCompletedStatus}
+            >
+              {saving ? 'Saving…' : isCompletedStatus ? 'Locked' : ticket.assignedToName ? 'Reassign' : 'Assign'}
+            </Button>
+          </div>
       )
     },
   }
 
   return (
-    <AppShell navItems={getNavItems(user?.role)} activePath="/tickets/admin">
-      <header className={listStyles.header}>
-        <div>
-          <p className={listStyles.breadcrumb}>Admin Workspace / Ticket Assignment</p>
-          <h1>Ticket Assignment</h1>
-          <p className={listStyles.subtitle}>
-            Assign incoming support tickets or rebalance workload across agents.
-          </p>
-        </div>
-
-        <Button variant="secondary" onClick={handleRefresh} disabled={loading || agentsLoading}>
-          ↻ Refresh Data
-        </Button>
-      </header>
-
-      <section className={listStyles.stats}>
-        <StatCard label="Total Tickets" value={totalElements} description="System support requests" />
-        <StatCard label="Assigned" value={assignedCount} description="On current page" tone="accent" />
-        <StatCard label="Unassigned" value={unassignedCount} description="Need agent on this page" tone="warn" />
-      </section>
-
-      {success && <Alert variant="success">{success}</Alert>}
-      {error && <Alert variant="error">{error}</Alert>}
-      {agentsError && <Alert variant="error">{agentsError}</Alert>}
-
-      <section className={listStyles.card}>
-        <div className={listStyles.cardHeader}>
+      <AppShell navItems={getNavItems(user?.role)} activePath="/tickets/admin">
+        <header className={listStyles.header}>
           <div>
-            <h2>All Tickets</h2>
-            <p>Select an agent from the dropdown and save changes.</p>
-          </div>
-          <input
-            className={listStyles.search}
-            type="search"
-            placeholder="Search by ID, subject, creator..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="Search tickets"
-          />
-        </div>
-
-        <div className={listStyles.toolbar}>
-          <div className={listStyles.toolbarGroup}>
-            <label>
-              Filter status
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-                <option value="ALL">All Statuses</option>
-                <option value="OPEN">Open</option>
-                <option value="ASSIGNED">Assigned</option>
-                <option value="IN_PROGRESS">In Progress</option>
-                <option value="WAITING_FOR_CUSTOMER">Waiting For Customer</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="CLOSED">Closed</option>
-              </select>
-            </label>
-
-            <label>
-              Sort by
-              <select
-                value={sortBy}
-                onChange={(event) => {
-                  setSortBy(event.target.value)
-                  setPageNumber(0)
-                }}
-              >
-                <option value="createdAt">Created date</option>
-                <option value="updatedAt">Updated date</option>
-                <option value="subject">Subject</option>
-                <option value="priority">Priority</option>
-                <option value="status">Status</option>
-              </select>
-            </label>
-
-            <label>
-              Direction
-              <select
-                value={sortDir}
-                onChange={(event) => {
-                  setSortDir(event.target.value)
-                  setPageNumber(0)
-                }}
-              >
-                <option value="desc">Newest first</option>
-                <option value="asc">Oldest first</option>
-              </select>
-            </label>
+            <p className={listStyles.breadcrumb}>Admin Workspace / Ticket Assignment</p>
+            <h1>Ticket Assignment</h1>
+            <p className={listStyles.subtitle}>
+              Assign incoming support tickets or rebalance workload across agents.
+            </p>
           </div>
 
-          <span className={listStyles.resultCount}>
+          <Button variant="secondary" onClick={handleRefresh} disabled={loading || agentsLoading}>
+            ↻ Refresh Data
+          </Button>
+        </header>
+
+        <section className={listStyles.stats}>
+          <StatCard label="Total Tickets" value={totalElements} description="System support requests" />
+          <StatCard label="Assigned" value={assignedCount} description="On current page" tone="accent" />
+          <StatCard label="Unassigned" value={unassignedCount} description="Need agent on this page" tone="warn" />
+        </section>
+
+        {success && <Alert variant="success">{success}</Alert>}
+        {error && <Alert variant="error">{error}</Alert>}
+        {agentsError && <Alert variant="error">{agentsError}</Alert>}
+        {categoriesError && <Alert variant="error">{categoriesError}</Alert>}
+
+        <section className={listStyles.card}>
+          <div className={listStyles.cardHeader}>
+            <div>
+              <h2>All Tickets</h2>
+              <p>Select an agent from the dropdown and save changes.</p>
+            </div>
+            <input
+                className={listStyles.search}
+                type="search"
+                placeholder="Search by ID, subject, creator..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                aria-label="Search tickets"
+            />
+          </div>
+
+          <div className={listStyles.toolbar}>
+            <div className={listStyles.toolbarGroup}>
+              <label>
+                Filter category
+                <select
+                    value={categoryIdFilter}
+                    onChange={(event) => {
+                      setCategoryIdFilter(event.target.value)
+                      setPageNumber(0)
+                    }}
+                >
+                  <option value="ALL">All Categories</option>
+                  {categories.map((category) => (
+                      <option key={category.id} value={String(category.id)}>
+                        {category.name || category.categoryName || `Category #${category.id}`}
+                      </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Filter priority
+                <select
+                    value={priorityFilter}
+                    onChange={(event) => {
+                      setPriorityFilter(event.target.value)
+                      setPageNumber(0)
+                    }}
+                >
+                  <option value="ALL">All Priorities</option>
+                  {PRIORITIES.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {priority}
+                      </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Filter status
+                <select
+                    value={statusFilter}
+                    onChange={(event) => {
+                      setStatusFilter(event.target.value)
+                      setPageNumber(0)
+                    }}
+                >
+                  <option value="ALL">All Statuses</option>
+                  {STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status.replaceAll('_', ' ')}
+                      </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                  Sort by
+                <select
+                    value={sortBy}
+                    onChange={(event) => {
+                      setSortBy(event.target.value)
+                      setPageNumber(0)
+                    }}
+                >
+                  <option value="createdAt">Created date</option>
+                  <option value="updatedAt">Updated date</option>
+                  <option value="subject">Subject</option>
+                  <option value="priority">Priority</option>
+                  <option value="status">Status</option>
+                </select>
+              </label>
+
+              <label>
+                Direction
+                <select
+                    value={sortDir}
+                    onChange={(event) => {
+                      setSortDir(event.target.value)
+                      setPageNumber(0)
+                    }}
+                >
+                  <option value="desc">Newest first</option>
+                  <option value="asc">Oldest first</option>
+                </select>
+              </label>
+            </div>
+
+            <span className={listStyles.resultCount}>
             Showing {filteredTickets.length} of {tickets.length} on page
           </span>
-        </div>
-
-        {loading ? (
-          <Spinner label="Loading support queue..." />
-        ) : error && tickets.length === 0 ? (
-          <div className={listStyles.message}>
-            <Alert variant="error">{error}</Alert>
-            <Button variant="secondary" size="sm" onClick={handleRefresh}>
-              Retry Connection
-            </Button>
           </div>
-        ) : filteredTickets.length === 0 ? (
-          <EmptyState
-            icon="🔍"
-            title="No matching tickets found"
-            description="Try resetting filters or search criteria."
-          />
-        ) : (
-          <TicketTable
-            tickets={filteredTickets}
-            onView={(ticket) => navigate(`/tickets/${ticket.id}`)}
-            subtitle={(ticket) => (ticket.createdByName ? `By ${ticket.createdByName}` : '')}
-            extraColumn={assignmentColumn}
-          />
-        )}
 
-        {!loading && !error && (
-          <Pagination
-            pageNumber={pageNumber}
-            totalPages={totalPages}
-            totalElements={totalElements}
-            pageSize={pageSize}
-            onChange={setPageNumber}
-          />
-        )}
-      </section>
-    </AppShell>
+          {loading ? (
+              <Spinner label="Loading support queue..." />
+          ) : error && tickets.length === 0 ? (
+              <div className={listStyles.message}>
+                <Alert variant="error">{error}</Alert>
+                <Button variant="secondary" size="sm" onClick={handleRefresh}>
+                  Retry Connection
+                </Button>
+              </div>
+          ) : filteredTickets.length === 0 ? (
+              <EmptyState
+                  icon="🔍"
+                  title="No matching tickets found"
+                  description="Try resetting filters or search criteria."
+              />
+          ) : (
+              <TicketTable
+                  tickets={filteredTickets}
+                  onView={(ticket) => navigate(`/tickets/${ticket.id}`)}
+                  subtitle={(ticket) => (ticket.createdByName ? `By ${ticket.createdByName}` : '')}
+                  extraColumn={assignmentColumn}
+              />
+          )}
+
+          {!loading && !error && (
+              <Pagination
+                  pageNumber={pageNumber}
+                  totalPages={totalPages}
+                  totalElements={totalElements}
+                  pageSize={pageSize}
+                  onChange={setPageNumber}
+              />
+          )}
+        </section>
+      </AppShell>
   )
 }
 

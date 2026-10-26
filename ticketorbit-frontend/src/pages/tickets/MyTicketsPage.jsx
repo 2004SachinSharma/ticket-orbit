@@ -29,6 +29,12 @@ function MyTicketsPage() {
   const [totalElements, setTotalElements] = useState(0)
   const [search, setSearch] = useState('')
 
+  const [status, setStatus] = useState('')
+  const [priority, setPriority] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+
+  const [categories, setCategories] = useState([])
+
   useEffect(() => {
     const fetchTickets = async () => {
       setLoading(true)
@@ -36,7 +42,15 @@ function MyTicketsPage() {
 
       try {
         const response = await api.get('/api/v1/tickets', {
-          params: { pageNumber, pageSize, sortBy, sortDir },
+          params: {
+            pageNumber,
+            pageSize,
+            sortBy,
+            sortDir,
+            ...(status && { status }),
+            ...(priority && { priority }),
+            ...(categoryId && { categoryId }),
+          },
         })
 
         setTickets(response.data.content ?? [])
@@ -53,7 +67,7 @@ function MyTicketsPage() {
     }
 
     fetchTickets()
-  }, [pageNumber, pageSize, sortBy, sortDir])
+  }, [pageNumber, pageSize, sortBy, sortDir, status, priority, categoryId])
 
   // Client-side filter over the loaded page only — the backend doesn't
   // have a search param yet (that's Day 23), so this only narrows what's
@@ -67,6 +81,25 @@ function MyTicketsPage() {
         ticket.categoryName?.toLowerCase().includes(query)
     )
   }, [tickets, search])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get('/api/v1/categories')
+
+        const data = response.data
+        const categoryList = Array.isArray(data)
+            ? data
+            : data?.content ?? []
+
+        setCategories(categoryList)
+      } catch (err) {
+        console.error('Failed to load categories:', err)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   return (
     <AppShell navItems={getNavItems(user?.role)} activePath="/tickets">
@@ -109,14 +142,70 @@ function MyTicketsPage() {
 
         <div className={styles.toolbar}>
           <div className={styles.toolbarGroup}>
+
+            <label>
+              Category
+              <select
+                  value={categoryId}
+                  onChange={(event) => {
+                    setCategoryId(event.target.value)
+                    setPageNumber(0)
+                  }}
+              >
+                <option value="">All Categories</option>
+
+                {categories.map((category) => (
+                    <option key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Priority
+              <select
+                  value={priority}
+                  onChange={(event) => {
+                    setPriority(event.target.value)
+                    setPageNumber(0)
+                  }}
+              >
+                <option value="">All Priorities</option>
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">CRITICAL</option>
+              </select>
+            </label>
+
+            <label>
+              Status
+              <select
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value)
+                    setPageNumber(0)
+                  }}
+              >
+                <option value="">All Statuses</option>
+                <option value="OPEN">Open</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="WAITING_FOR_CUSTOMER">Waiting For Customer</option>
+                <option value="RESOLVED">Resolved</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </label>
+
             <label>
               Sort by
               <select
-                value={sortBy}
-                onChange={(event) => {
-                  setSortBy(event.target.value)
-                  setPageNumber(0)
-                }}
+                  value={sortBy}
+                  onChange={(event) => {
+                    setSortBy(event.target.value)
+                    setPageNumber(0)
+                  }}
               >
                 <option value="createdAt">Created date</option>
                 <option value="updatedAt">Updated date</option>
@@ -129,18 +218,20 @@ function MyTicketsPage() {
             <label>
               Direction
               <select
-                value={sortDir}
-                onChange={(event) => {
-                  setSortDir(event.target.value)
-                  setPageNumber(0)
-                }}
+                  value={sortDir}
+                  onChange={(event) => {
+                    setSortDir(event.target.value)
+                    setPageNumber(0)
+                  }}
               >
                 <option value="desc">Newest first</option>
                 <option value="asc">Oldest first</option>
               </select>
             </label>
+
           </div>
         </div>
+
 
         {loading ? (
           <Spinner label="Loading tickets..." />

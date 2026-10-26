@@ -2,7 +2,11 @@ package com.ticketorbit.ticket.controller;
 
 import com.ticketorbit.ticket.dto.*;
 import com.ticketorbit.ticket.service.TicketService;
+import com.ticketorbit.ticket.ticket_enum.TicketPriority;
+import com.ticketorbit.ticket.ticket_enum.TicketStatus;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -27,11 +31,30 @@ return ResponseEntity.status(HttpStatus.CREATED).body(ticketService.createTicket
 }
 
 @GetMapping()
-ResponseEntity<PageResponseDto> getTicketsWithSortingAndpagination(@RequestParam(defaultValue = "createdAt", name="sortBy") String sortBy,
-                                                                          @RequestParam(defaultValue = "asc", name="sortDir") String sortDir,
-                                                                          @RequestParam(defaultValue = "0", name="pageNumber") int pageNumber,
-                                                                          @RequestParam(defaultValue = "3", name="pageSize") int pageSize){
-	return ResponseEntity.ok(ticketService.getTickets(sortBy, sortDir, pageNumber, pageSize));
+ResponseEntity<PageResponseDto> getTicketsWithSortingAndpagination(@RequestParam(defaultValue = "createdAt", name="sortBy")
+                                                                   String sortBy,
+                                                                   
+                                                                   @RequestParam(defaultValue = "asc", name="sortDir")
+                                                                   String sortDir,
+                                                                   
+                                                                   @RequestParam(defaultValue = "0", name="pageNumber")
+                                                                   @Min(0) int pageNumber,
+                                                                   
+                                                                   @RequestParam(defaultValue = "3", name="pageSize")
+                                                                   @Min(1) @Max(50) int pageSize,
+		                                                           
+                                                                   @RequestParam(required = false)
+                                                                   TicketStatus status,
+		                                                           
+		                                                           @RequestParam(required = false)
+                                                                   TicketPriority priority,
+		                                                           
+		                                                           @RequestParam(required = false)
+                                                                   @Positive Long categoryId,
+		                                                           
+		                                                           @RequestParam(required = false)
+                                                                   @Positive Long assignedTo){
+	return ResponseEntity.ok(ticketService.getTickets(sortBy, sortDir, pageNumber, pageSize, status, priority, categoryId, assignedTo));
 }
 
 
