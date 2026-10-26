@@ -1,0 +1,24 @@
+@import '../../../styles/tokens.css';
+
+.empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.icon {
+  font-size: 30px;
+  color: var(--to-border);
+  margin-bottom: 12px;
+}
+
+.empty h3 {
+  margin: 0 0 6px;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.empty p {
+  margin: 0 0 18px;
+  color: var(--to-muted);
+  font-size: 13.5px;
+}

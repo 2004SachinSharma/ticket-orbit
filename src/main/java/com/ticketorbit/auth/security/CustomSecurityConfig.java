@@ -42,6 +42,10 @@ http.csrf(csrf -> csrf.disable())
 						                   .accessDeniedHandler(errorHandler))//403
 		.authorizeHttpRequests(authorizeRequests -> authorizeRequests
 				                                            .requestMatchers("/api/v1/auth/register/public","/api/v1/auth/test/public","/api/v1/auth/login/public").permitAll()
+				                                            .requestMatchers("/v3/api-docs/**",
+						                                            "/v3/api-docs.yaml",
+						                                            "/swagger-ui/**",
+						                                            "/swagger-ui.html").permitAll()
 				                                            .anyRequest().authenticated())
 		.addFilterBefore(new JwtTokenValidatorFilter(jwtUtil, errorHandler), UsernamePasswordAuthenticationFilter.class);
 

@@ -1,302 +1,317 @@
-import {useEffect, useState} from 'react'
-import {useNavigate, useParams} from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../api/axios'
-import './TicketDetailPage.css'
-import {useAuth} from "../../auth/AuthContext.jsx";
-import TicketOrbitLogo from "../../components/Logo/logo.jsx";
+import { useAuth } from '../../auth/AuthContext.jsx'
+import AppShell from '../../components/layout/AppShell/AppShell.jsx'
+import { getNavItems } from '../../components/layout/AppShell/navItems.js'
+import Badge from '../../components/ui/Badge/Badge.jsx'
+import Button from '../../components/ui/Button/Button.jsx'
+import Spinner from '../../components/ui/Spinner/Spinner.jsx'
+import Alert from '../../components/ui/Alert/Alert.jsx'
+import StatusActions from '../../components/tickets/StatusActions/StatusActions.jsx'
+import styles from './TicketDetailPage.module.css'
+
+const formatDate = (date) => {
+  if (!date) return '—'
+  return new Date(date).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 function TicketDetailPage() {
-    const {ticketId} = useParams()
-    const navigate = useNavigate()
-    const {user} = useAuth()
-
-    const [ticket, setTicket] = useState(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+  const { ticketId } = useParams()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
 
-    const [messages, setMessages] = useState([])
-    const [messagesLoading, setMessagesLoading] = useState(true)
-    const [messageError, setMessageError] = useState('')
-    const [messageBody, setMessageBody] = useState('')
-    const [messageType, setMessageType] = useState('PUBLIC')
-    const [sending, setSending] = useState(false)
+  const [ticket, setTicket] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-    useEffect(() => {
-        const fetchTicket = async () => {
-            setLoading(true)
-            setError('')
+  const [messages, setMessages] = useState([])
+  const [messagesLoading, setMessagesLoading] = useState(true)
+  const [messageError, setMessageError] = useState('')
+  const [messageBody, setMessageBody] = useState('')
+  const [messageType, setMessageType] = useState('PUBLIC')
+  const [sending, setSending] = useState(false)
+  console.log(messages)
 
-            try {
-                const response = await api.get(`/api/v1/tickets/${ticketId}`)
-                setTicket(response.data)
-            } catch (err) {
-                setError(
-                    err.response?.data?.message ||
-                    'Ticket load nahi ho paya.'
-                )
-            } finally {
-                setLoading(false)
-            }
-        }
-        console.log("llllloooo", ticketId)
-        fetchTicket()
-    }, [ticketId])
 
-    useEffect(() => {
-        const fetchMessages = async () => {
-            setMessagesLoading(true)
-            setMessageError('')
+  const [priorityUpdating, setPriorityUpdating] = useState(false)
+  const [priorityError, setPriorityError] = useState('')
+  useEffect(() => {
+    const fetchTicket = async () => {
+      setLoading(true)
+      setError('')
 
-            try {
-                const response = await api.get(
-                    `/api/v1/tickets/${ticketId}/messages`
-                )
-                setMessages(response.data)
-            } catch (err) {
-                setMessageError(
-                    err.response?.data?.message || 'Messages load nahi ho paye.'
-                )
-            } finally {
-                setMessagesLoading(false)
-            }
-        }
-
-        if (ticketId) {
-            fetchMessages()
-        }
-    }, [ticketId])
-
-    const handleSendMessage = async (e) => {
-        e.preventDefault()
-
-        if (!messageBody.trim()) return
-
-        setSending(true)
-        setMessageError('')
-
-        try {
-            const response = await api.post(
-                `/api/v1/tickets/${ticketId}/messages`,
-                {
-                    body: messageBody.trim(),
-                    type: messageType,
-                }
-            )
-
-            setMessages((previous) => [...previous, response.data])
-            setMessageBody('')
-        } catch (err) {
-            setMessageError(
-                err.response?.data?.message || 'Message send nahi ho paya.'
-            )
-        } finally {
-            setSending(false)
-        }
-    }
-    const formatDate = (date) => {
-        if (!date) return '—'
-
-        return new Date(date).toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        })
+      try {
+        const response = await api.get(`/api/v1/tickets/${ticketId}`)
+        setTicket(response.data)
+      } catch (err) {
+        setError(err.response?.data?.message || 'Ticket could not be loaded.')
+      } finally {
+        setLoading(false)
+      }
     }
 
-    const formatLabel = (value) =>
-        value?.replaceAll('_', ' ') || '—'
+    fetchTicket()
+  }, [ticketId])
 
-    if (loading) {
-        return <div style={{padding: '32px'}}>Loading ticket...</div>
+  useEffect(() => {
+    const fetchMessages = async () => {
+      setMessagesLoading(true)
+      setMessageError('')
+
+      try {
+        const response = await api.get(`/api/v1/tickets/${ticketId}/messages`)
+        setMessages(response.data)
+      } catch (err) {
+        setMessageError(err.response?.data?.message || 'Messages could not be loaded.')
+      } finally {
+        setMessagesLoading(false)
+      }
     }
 
-    if (error || !ticket) {
-        return (
-            <div style={{padding: '32px'}}>
-                <p role="alert">{error || 'Ticket not found.'}</p>
-                <button onClick={() => navigate('/tickets')}>
-                    Back to My Tickets
-                </button>
-            </div>
-        )
+    if (ticketId) {
+      fetchMessages()
     }
+  }, [ticketId])
 
+  const handleSendMessage = async (event) => {
+    event.preventDefault()
+    if (!messageBody.trim()) return
+
+    setSending(true)
+    setMessageError('')
+
+    try {
+      const response = await api.post(`/api/v1/tickets/${ticketId}/messages`, {
+        body: messageBody.trim(),
+        type: messageType,
+      })
+
+      setMessages((previous) => [...previous, response.data])
+      setMessageBody('')
+    } catch (err) {
+      setMessageError(err.response?.data?.message || 'Message could not be sent.')
+    } finally {
+      setSending(false)
+    }
+  }
+const handlePriorityChange = async (event) => {
+  const newPriority = event.target.value
+
+  if (!newPriority || newPriority === ticket.priority) return
+
+  setPriorityUpdating(true)
+  setPriorityError('')
+
+  try {
+    const response = await api.patch(
+      `/api/v1/tickets/${ticketId}/priority`,
+  { priority: newPriority },
+)
+
+  setTicket((previous) => ({
+    ...previous,
+    ...response.data,
+  }))
+} catch (err) {
+  setPriorityError(
+      err.response?.data?.message || 'Priority could not be updated.',
+  )
+} finally {
+  setPriorityUpdating(false)
+}
+}
+
+
+  if (loading) {
     return (
-        <div className="ticket-detail-layout">
-            <aside className="ticket-detail-sidebar">
-                <TicketOrbitLogo/>
-                <p>WORKSPACE</p>
+      <AppShell navItems={getNavItems(user?.role)} activePath="">
+        <Spinner label="Loading ticket..." />
+      </AppShell>
+    )
+  }
 
-                <button onClick={() => navigate('/tickets')}>
-                    My Tickets
-                </button>
+  if (error || !ticket) {
+    return (
+      <AppShell navItems={getNavItems(user?.role)} activePath="">
+        <Alert variant="error">{error || 'Ticket not found.'}</Alert>
+        <Button variant="secondary" onClick={() => navigate('/tickets')}>
+          Back
+        </Button>
+      </AppShell>
+    )
+  }
 
-                <button onClick={() => navigate('/tickets/new')}>
-                    + Create Ticket
-                </button>
-            </aside>
+  return (
+    <AppShell navItems={getNavItems(user?.role)} activePath="">
+      <Button variant="ghost" size="sm" className={styles.backButton} onClick={() => navigate(-1)}>
+        ← Back
+      </Button>
 
-            <main className="ticket-detail-main">
-                <button
-                    className="ticket-back-button"
-                    onClick={() => navigate('/tickets')}
-                >
-                    ← Back to My Tickets
-                </button>
+      <header className={styles.header}>
+        <div>
+          <p className={styles.breadcrumb}>Workspace / Tickets / #{ticket.id}</p>
+          <h1>{ticket.subject}</h1>
+          <p className={styles.subtitle}>
+            Ticket #{ticket.id} · Created {formatDate(ticket.createdAt)}
+          </p>
+        </div>
 
-                <header className="ticket-detail-header">
-                    <div>
-                        <p className="ticket-breadcrumb">
-                            Workspace / My Tickets / #{ticket.id}
-                        </p>
+        <Badge kind="status" value={ticket.status} />
+      </header>
 
-                        <h1>{ticket.subject}</h1>
+      <div className={styles.grid}>
+        <section className={styles.conversationCard}>
+          <div className={styles.sectionHeading}>
+            <h2>Ticket Description</h2>
+            <span>Original request</span>
+          </div>
 
-                        <p className="ticket-detail-subtitle">
-                            Ticket #{ticket.id} · Created {formatDate(ticket.createdAt)}
-                        </p>
+          <div className={styles.description}>{ticket.description}</div>
+
+          <div className={styles.messagesSection}>
+            <div className={styles.sectionHeading}>
+              <h2>Conversation</h2>
+              <span>{messages.length} messages</span>
+            </div>
+
+            {messagesLoading ? (
+              <Spinner label="Loading messages..." />
+            ) : messageError && messages.length === 0 ? (
+              <Alert variant="error">{messageError}</Alert>
+            ) : messages.length === 0 ? (
+              <p className={styles.mutedText}>No messages yet. Start the conversation below.</p>
+            ) : (
+              <div className={styles.messagesList}>
+                {messages.map((message) => (
+                  <article className={message?.role === user?.role ? styles.messageYou: styles.message} key={message.id}>
+                    <div className={styles.profileLetter}>{message?.senderName[0]}</div>
+                    <div className={styles.messageHeader}>
+                      <strong>{message?.role === user?.role ? 'You'  :  message?.senderName + '(' + message.role +')'}</strong>
+                      <span>{formatDate(message.createdAt)}</span>
                     </div>
 
-                    <span className={`detail-status status-${ticket.status?.toLowerCase()}`}>
-            {formatLabel(ticket.status)}
-          </span>
-                </header>
+                    {message.type === 'INTERNAL_NOTE' && (
+                      <span className={styles.internalNoteLabel}>Internal Note</span>
+                    )}
 
-                <div className="ticket-detail-grid">
-                    <section className="ticket-conversation-card">
-                        <div className="ticket-section-heading">
-                            <h2>Ticket Description</h2>
-                            <span>Original request</span>
-                        </div>
+                    <p>{message.body}</p>
+                  </article>
+                ))}
+              </div>
+            )}
 
-                        <div className="ticket-description">
-                            {ticket.description}
-                        </div>
+            {messageError && messages.length > 0 && <Alert variant="error">{messageError}</Alert>}
 
-                        <div className="ticket-created-note">
-                            <span className="ticket-user-avatar">{user?.name[0]}</span>
+            <form onSubmit={handleSendMessage} className={styles.messageForm}>
+              <label htmlFor="messageBody">Your message</label>
 
-                            <div>
-                                <strong>Submitted by you</strong>
-                                <p>{formatDate(ticket.createdAt)}</p>
-                            </div>
-                        </div>
-                        <div className="ticket-messages-section">
-                            <div className="ticket-section-heading">
-                                <h2>Conversation</h2>
-                                <span>{messages.length} messages</span>
-                            </div>
+              <textarea
+                id="messageBody"
+                value={messageBody}
+                onChange={(event) => setMessageBody(event.target.value)}
+                placeholder="Write your reply..."
+                rows={4}
+                maxLength={5000}
+                required
+              />
 
-                            {messagesLoading ? (
-                                <p>Loading messages...</p>
-                            ) : messageError && messages.length === 0 ? (
-                                <p role="alert">{messageError}</p>
-                            ) : messages.length === 0 ? (
-                                <p>No messages yet. Start the conversation below.</p>
-                            ) : (
-                                <div className="ticket-messages-list">
-                                    {messages.map((message) => (
-                                        <article className="ticket-message" key={message.id}>
-                                            <div className="ticket-message-header">
-                                                <strong>{message.senderName}</strong>
-                                                <span>{formatDate(message.createdAt)}</span>
-                                            </div>
-
-                                            {message.type === 'INTERNAL_NOTE' && (
-                                                <span className="internal-note-label">
-                            Internal Note
-                        </span>
-                                            )}
-
-                                            <p>{message.body}</p>
-                                        </article>
-                                    ))}
-                                </div>
-                            )}
-
-                            {messageError && messages.length > 0 && (
-                                <p role="alert">{messageError}</p>
-                            )}
-
-                            <form onSubmit={handleSendMessage} className="ticket-message-form">
-                                <label htmlFor="messageBody">Your message</label>
-
-                                <textarea
-                                    id="messageBody"
-                                    value={messageBody}
-                                    onChange={(e) => setMessageBody(e.target.value)}
-                                    placeholder="Write your reply..."
-                                    rows={4}
-                                    maxLength={5000}
-                                    required
-                                />
-
-                                {(user?.role === 'AGENT' || user?.role === 'ADMIN') && (
-                                    <div>
-                                        <label htmlFor="messageType">Message type</label>
-                                        <select
-                                            id="messageType"
-                                            value={messageType}
-                                            onChange={(e) => setMessageType(e.target.value)}
-                                        >
-                                            <option value="PUBLIC">Public Reply</option>
-                                            <option value="INTERNAL_NOTE">Internal Note</option>
-                                        </select>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={sending || !messageBody.trim()}
-                                >
-                                    {sending ? 'Sending...' : 'Send Message'}
-                                </button>
-                            </form>
-                        </div>
-                    </section>
-
-                    <aside className="ticket-details-card">
-                        <h2>Ticket Details</h2>
-
-                        <div className="ticket-detail-field">
-                            <span>Ticket ID</span>
-                            <strong>#{ticket.id}</strong>
-                        </div>
-
-                        <div className="ticket-detail-field">
-                            <span>Category</span>
-                            <strong>{ticket.categoryName || '—'}</strong>
-                        </div>
-
-                        <div className="ticket-detail-field">
-                            <span>Priority</span>
-                            <strong className={`detail-priority priority-${ticket.priority?.toLowerCase()}`}>
-                                {formatLabel(ticket.priority)}
-                            </strong>
-                        </div>
-
-                        <div className="ticket-detail-field">
-                            <span>Status</span>
-                            <strong>{formatLabel(ticket.status)}</strong>
-                        </div>
-
-                        <div className="ticket-detail-field">
-                            <span>Created</span>
-                            <strong>{formatDate(ticket.createdAt)}</strong>
-                        </div>
-
-                        <div className="ticket-detail-field">
-                            <span>Last Updated</span>
-                            <strong>{formatDate(ticket.updatedAt)}</strong>
-                        </div>
-                    </aside>
+              {(user?.role === 'AGENT' || user?.role === 'ADMIN') && (
+                <div className={styles.messageTypeField}>
+                  <label htmlFor="messageType">Message type</label>
+                  <select
+                    id="messageType"
+                    value={messageType}
+                    onChange={(event) => setMessageType(event.target.value)}
+                  >
+                    <option value="PUBLIC">Public Reply</option>
+                    <option value="INTERNAL_NOTE">Internal Note</option>
+                  </select>
                 </div>
-            </main>
-        </div>
-    )
+              )}
+
+              <Button type="submit" variant="primary" disabled={sending || !messageBody.trim()}>
+                {sending ? 'Sending...' : 'Send Message'}
+              </Button>
+            </form>
+          </div>
+        </section>
+
+        <aside className={styles.detailsCard}>
+          <h2>Ticket Details</h2>
+
+          <div className={styles.detailField}>
+            <span>Ticket ID</span>
+            <strong>#{ticket.id}</strong>
+          </div>
+
+          <div className={styles.detailField}>
+            <span>Category</span>
+            <strong>{ticket.categoryName || '—'}</strong>
+          </div>
+
+
+          <div className={styles.detailField}>
+            <span>Priority</span>
+
+            {user?.role === 'ADMIN' || user?.role === 'AGENT' ? (
+                <select
+                    className={styles.prioritySelect}
+                    value={ticket.priority}
+                    onChange={handlePriorityChange}
+                    disabled={priorityUpdating}
+                    aria-label="Ticket priority">
+
+                  <option value="LOW" >Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                  <option value="CRITICAL">CRITICAL</option>
+                </select>
+            ) : (
+                <Badge kind="priority" value={ticket.priority} />
+            )}
+          </div>
+
+          {priorityError && (
+              <Alert variant="error">{priorityError}</Alert>
+          )}
+
+
+
+          <div className={styles.detailField}>
+            <span>Status</span>
+            <Badge kind="status" value={ticket.status} />
+          </div>
+
+          {ticket.assignedToName !== undefined && (
+            <div className={styles.detailField}>
+              <span>Assigned to</span>
+              <strong>{ticket.assignedToName || 'Unassigned'}</strong>
+            </div>
+          )}
+
+          <div className={styles.detailField}>
+            <span>Created</span>
+            <strong>{formatDate(ticket.createdAt)}</strong>
+          </div>
+
+          <div className={styles.detailField}>
+            <span>Last Updated</span>
+            <strong>{formatDate(ticket.updatedAt)}</strong>
+          </div>
+
+          <StatusActions ticket={ticket} role={user?.role} onUpdated={setTicket} />
+        </aside>
+      </div>
+    </AppShell>
+  )
 }
 
 export default TicketDetailPage

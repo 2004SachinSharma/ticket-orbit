@@ -1,0 +1,13 @@
+@import '../../../styles/tokens.css';
+
+.actions {
+  margin-top: var(--to-space-4);
+  padding-top: var(--to-space-4);
+  border-top: 1px solid var(--to-border);
+}
+
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}

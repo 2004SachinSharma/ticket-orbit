@@ -1,0 +1,58 @@
+@import '../../../styles/tokens.css';
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: var(--to-radius-sm);
+  border: 1.5px solid transparent;
+  font-family: var(--to-font);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.md { height: 40px; padding: 0 16px; font-size: 13.5px; }
+.sm { height: 32px; padding: 0 12px; font-size: 12.5px; }
+
+.primary {
+  background: var(--to-accent);
+  color: #fff;
+  box-shadow: 0 8px 18px -8px rgba(53, 116, 240, 0.55);
+}
+.primary:not(:disabled):hover { background: var(--to-accent-dark); }
+
+.secondary {
+  background: #fff;
+  border-color: var(--to-border);
+  color: var(--to-ink);
+}
+.secondary:not(:disabled):hover {
+  border-color: var(--to-accent);
+  color: var(--to-accent);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--to-muted);
+}
+.ghost:not(:disabled):hover {
+  background: var(--to-bg);
+  color: var(--to-ink);
+}
+
+.danger {
+  background: var(--to-red-soft);
+  color: var(--to-red);
+}
+.danger:not(:disabled):hover {
+  background: var(--to-red);
+  color: #fff;
+}
