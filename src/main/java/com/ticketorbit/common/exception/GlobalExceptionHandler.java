@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -18,6 +19,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 // common/exception/GlobalExceptionHandler.java
@@ -70,7 +72,7 @@ public ResponseEntity<ErrorResponse> handleNoResource(
         NoResourceFoundException ex,
         HttpServletRequest req) {
     
-    return ResponseEntity.badRequest().body(
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
             ErrorResponse.of(
                     404,
                     "INVALID_ENDPOINT",
@@ -123,6 +125,28 @@ public ResponseEntity<ErrorResponse> handleInvalidState(InvalidStateTransitionEx
             ErrorResponse.of(409, "INVALID_TICKET_STATE", ex.getMessage(), request.getRequestURI())
     );
     }
+
+@ExceptionHandler(IllegalArgumentException.class)
+public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                   .body(ErrorResponse.of(400,
+                              "INVALID_REQUEST_PARAM",
+                                    ex.getMessage(),
+                              request.getRequestURI())
+                   );
+}
+
+@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+    String message = String.format("Invalid value for parameter '%s'", ex.getName());
+    
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                   .body(ErrorResponse.of(400,
+                           "INVALID_PARAM_TYPE",
+                           message,
+                           request.getRequestURI())
+                   );
+}
 
 // All that could not be caught in the above specific exceptions will be handled here
     @ExceptionHandler(Exception.class)
