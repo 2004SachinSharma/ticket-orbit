@@ -8,6 +8,7 @@ import com.ticketorbit.ticket.entity.TicketMessage;
 import com.ticketorbit.ticket.repository.TicketMessageRepository;
 import com.ticketorbit.ticket.repository.TicketRepository;
 import com.ticketorbit.ticket.ticket_enum.TicketMessageType;
+import com.ticketorbit.ticket.ticket_enum.TicketStatus;
 import com.ticketorbit.user.entity.Role;
 import com.ticketorbit.user.entity.User;
 import com.ticketorbit.user.repository.UserRepository;
@@ -68,6 +69,12 @@ public TicketMessageResponseDto sendMessage(Long ticketId, TicketMessageRequestD
 			    role == Role.CUSTOMER) {
 		throw new AccessDeniedException(
 				"Customers cannot create internal notes");
+	}
+ 
+	//As soon the customer messages in WAITING_FOR_CUSTOMER status, the ticket out of WAITING_FOR_CUSTOMER back into IN_PROGRESS.
+	if (role == Role.CUSTOMER && ticket.getStatus() == TicketStatus.WAITING_FOR_CUSTOMER) {
+		ticket.setStatus(TicketStatus.IN_PROGRESS);
+		ticketRepository.save(ticket);
 	}
 	
 	TicketMessage message = new TicketMessage();

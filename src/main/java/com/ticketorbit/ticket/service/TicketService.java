@@ -18,17 +18,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.OffsetDateTime;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -118,8 +114,6 @@ public TicketResponseDto getTicketById(long ticketId) {
 }
 
 
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
-@Transactional()
 public StaffTicketResponseDto assignTicketToAgent(Long ticketId, AssignTicketRequestDto request) {
 	
 	Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(
@@ -150,10 +144,93 @@ public StaffTicketResponseDto assignTicketToAgent(Long ticketId, AssignTicketReq
 	return StaffTicketResponseDto.from(ticketRepository.save(ticket));
 }
 
+public StaffTicketResponseDto updateStatus(Long ticketId, UpdateTicketStatusRequestDto request) {
+	Ticket ticket = ticketRepository.findById(ticketId)
+			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	
+	User actor = currentUser();
+	if (actor.getRole() == Role.AGENT &&
+			    (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), actor.getId()))) {
+		throw new ResourceNotFoundException("Ticket not found");
+	}
+	
+	TicketStatus current = ticket.getStatus();
+	TicketStatus target = request.status();
+	
+	if (!current.canTransitionTo(target)) {
+		throw new InvalidStateTransitionException(
+				"Cannot move ticket from " + current + " to " + target);
+	}
+	
+	ticket.setStatus(target);
+	if (target == TicketStatus.RESOLVED) {
+		ticket.setResolvedAt(OffsetDateTime.now());
+	}
+	
+	return StaffTicketResponseDto.from(ticketRepository.save(ticket));
+}
+
+public CustomerTicketResponseDto closeTicket(Long ticketId) {
+	Ticket ticket = ticketRepository.findById(ticketId)
+			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	
+	if (!Objects.equals(ticket.getCreatedBy().getId(), currentUser().getId())) {
+		throw new ResourceNotFoundException("Ticket not found");
+	}
+	if (ticket.getStatus() != TicketStatus.RESOLVED) {
+		throw new InvalidStateTransitionException(
+				"Cannot close ticket from status " + ticket.getStatus());
+	}
+	
+	ticket.setStatus(TicketStatus.CLOSED);
+	ticket.setClosedAt(OffsetDateTime.now());
+	
+	return CustomerTicketResponseDto.from(ticketRepository.save(ticket));
+}
+
+
+public CustomerTicketResponseDto reopenTicket(Long ticketId) {
+	Ticket ticket = ticketRepository.findById(ticketId)
+			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	
+	if (!Objects.equals(ticket.getCreatedBy().getId(), currentUser().getId())) {
+		throw new ResourceNotFoundException("Ticket not found");
+	}
+	if (ticket.getStatus() != TicketStatus.RESOLVED) {
+		throw new InvalidStateTransitionException(
+				"Cannot reopen ticket from status " + ticket.getStatus());
+	}
+	
+	ticket.setStatus(TicketStatus.IN_PROGRESS);
+	
+	return CustomerTicketResponseDto.from(ticketRepository.save(ticket));
+}
+
+
+public StaffTicketResponseDto updatePriority(Long ticketId,UpdateTicketPriorityRequestDto request){
+	Ticket ticket = ticketRepository.findById(ticketId)
+			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	
+	Long userId = currentUser().getId();
+	
+	if(currentUser().getRole() == Role.AGENT
+			   && (ticket.getAssignedTo() == null
+			   || !Objects.equals(ticket.getAssignedTo().getId(), userId))){
+	
+		throw new ResourceNotFoundException("Ticket not found");
+	}
+	
+	ticket.setPriority(request.priority());
+	
+	return StaffTicketResponseDto.from(ticketRepository.save(ticket));
+ 
+}
+
 private User currentUser() {
 	Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
 	return userRepository.findById(userId)
 			       .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 }
+
 
 }
