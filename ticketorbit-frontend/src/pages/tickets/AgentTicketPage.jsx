@@ -30,6 +30,9 @@ function AgentTicketsPage() {
 
   const [tickets, setTickets] = useState([])
   const [categories, setCategories] = useState([])
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [categoryError, setCategoryError] = useState('')
@@ -80,6 +83,9 @@ function AgentTicketsPage() {
             ...(status && { status }),
             ...(priority && { priority }),
             ...(categoryId && { categoryId }),
+            ...(search && { q: search }),
+            ...(from && { from: `${from}T00:00:00` }),
+            ...(to && { to: `${to}T23:59:59` }),
           },
         })
 
@@ -97,19 +103,7 @@ function AgentTicketsPage() {
     }
 
     fetchAssignedTickets()
-  }, [pageNumber, pageSize, sortBy, sortDir, status, priority, categoryId])
-
-  // Search remains client-side and applies to the currently loaded page.
-  const filteredTickets = useMemo(() => {
-    const query = search.trim().toLowerCase()
-
-    return tickets.filter(
-        (ticket) =>
-            ticket.subject?.toLowerCase().includes(query) ||
-            String(ticket.id ?? '').includes(query) ||
-            ticket.categoryName?.toLowerCase().includes(query),
-    )
-  }, [tickets, search])
+  }, [pageNumber, pageSize, sortBy, sortDir, status, priority, categoryId, search, from, to])
 
   const resetPageAndSetFilter = (setter, value) => {
     setter(value)
@@ -154,6 +148,18 @@ function AgentTicketsPage() {
                 placeholder="Search tickets..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
+            />
+            <input
+                type="date"
+                value={from}
+                onChange={(e) => { setFrom(e.target.value); setPageNumber(0) }}
+                className={styles.date}
+            />
+            <input
+                type="date"
+                value={to}
+                onChange={(e) => { setTo(e.target.value); setPageNumber(0) }}
+                className={styles.date}
             />
           </div>
 
@@ -263,7 +269,7 @@ function AgentTicketsPage() {
                   Retry
                 </Button>
               </div>
-          ) : filteredTickets.length === 0 ? (
+          ) : tickets.length === 0 ? (
               <EmptyState
                   title={search ? 'No matching tickets' : 'Nothing assigned to you yet'}
                   description={
@@ -274,7 +280,7 @@ function AgentTicketsPage() {
               />
           ) : (
               <TicketTable
-                  tickets={filteredTickets}
+                  tickets={tickets}
                   onView={(ticket) => navigate(`/tickets/${ticket.id}`)}
               />
           )}

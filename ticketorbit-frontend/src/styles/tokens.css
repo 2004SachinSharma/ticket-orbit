@@ -8,7 +8,7 @@
 :root {
   /* color */
   --to-bg: #F6F7FA;
-  --to-surface: #FFFFFF;
+  --to-surface: rgb(255 255 255 / 0.04);
   --to-sidebar: #15171F;
   --to-sidebar-hover: #1F2230;
   --to-border: #E4E6EC;
