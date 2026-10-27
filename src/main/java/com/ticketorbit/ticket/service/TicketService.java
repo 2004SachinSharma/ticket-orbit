@@ -26,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.Set;
@@ -59,7 +60,7 @@ public CustomerTicketResponseDto createTicket(CreateTicketRequestDto request) {
 	
 }
 
-public PageResponseDto getTickets(String sortBy, String sortDirection, int pageNumber, int pageSize, TicketStatus status, TicketPriority priority, Long categoryId, Long assignedTo) {
+public PageResponseDto getTickets(String sortBy, String sortDirection, int pageNumber, int pageSize, TicketStatus status, TicketPriority priority, Long categoryId, Long assignedTo,String q, LocalDateTime from, LocalDateTime to) {
 	Set<String> allowedSortFields = Set.of(
 			"createdAt",
 			"priority",
@@ -96,6 +97,15 @@ public PageResponseDto getTickets(String sortBy, String sortDirection, int pageN
 	}
 	if (categoryId != null) {
 		specification = specification.and(TicketSpecifications.hasCategory(categoryId));
+	}
+	if (q != null && !q.isBlank()) {
+		specification = specification.and(TicketSpecifications.matchesSearch(q));
+	}
+	if (from != null) {
+		specification = specification.and(TicketSpecifications.createdAfter(from));
+	}
+	if (to != null) {
+		specification = specification.and(TicketSpecifications.createdBefore(to));
 	}
 
 //	Role Based filtration: the curr user should be agent and must only access the tickets assigned to them

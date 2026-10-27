@@ -50,6 +50,8 @@ function AdminTicketAssignmentPage() {
   const [priorityFilter, setPriorityFilter] = useState('ALL')
   const [categoryIdFilter, setCategoryIdFilter] = useState('ALL')
   const [categories, setCategories] = useState([])
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   const [categoriesError, setCategoriesError] = useState('')
   const [assignmentDrafts, setAssignmentDrafts] = useState({})
   const [savingTicketId, setSavingTicketId] = useState(null)
@@ -61,10 +63,6 @@ function AdminTicketAssignmentPage() {
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
 
-  // Plain (non-memoized) fetchers — only useState/useRef/useEffect/useMemo/
-  // useContext are used in this app, so no useCallback here. They're
-  // re-created each render, which is fine since they're only ever called
-  // from useEffect/handlers, never passed down as a dependency elsewhere.
   const fetchAgents = async () => {
     setAgentsLoading(true)
     setAgentsError('')
@@ -98,6 +96,9 @@ function AdminTicketAssignmentPage() {
           ...(statusFilter !== 'ALL' && { status: statusFilter }),
           ...(priorityFilter !== 'ALL' && { priority: priorityFilter }),
           ...(categoryIdFilter !== 'ALL' && { categoryId: categoryIdFilter }),
+          ...(search && { q: search }),
+          ...(from && { from: `${from}T00:00:00` }),
+          ...(to && { to: `${to}T23:59:59` }),
         },
       })
 
@@ -155,7 +156,7 @@ function AdminTicketAssignmentPage() {
       isMounted = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageNumber, sortBy, sortDir, statusFilter, priorityFilter, categoryIdFilter])
+  }, [pageNumber, sortBy, sortDir, statusFilter, priorityFilter, categoryIdFilter, search, from, to])
 
   const handleRefresh = async () => {
     const loadedAgents = await fetchAgents()
@@ -211,20 +212,7 @@ function AdminTicketAssignmentPage() {
       setSavingTicketId(null)
     }
   }
-
-  const filteredTickets = useMemo(() => {
-    const query = search.trim().toLowerCase()
-    return tickets.filter((ticket) => {
-      const matchesSearch =
-          !query ||
-          String(ticket.id ?? '').includes(query) ||
-          ticket.subject?.toLowerCase().includes(query) ||
-          ticket.categoryName?.toLowerCase().includes(query) ||
-          ticket.createdByName?.toLowerCase().includes(query)
-
-      return matchesSearch
-    })
-  }, [tickets, search])
+  
 
   const unassignedCount = tickets.filter((ticket) => !ticket.assignedToName).length
   const assignedCount = tickets.length - unassignedCount
@@ -310,6 +298,19 @@ function AdminTicketAssignmentPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 aria-label="Search tickets"
+            />
+            <input
+                type="date"
+                value={from}
+                onChange={(e) => { setFrom(e.target.value); setPageNumber(0) }}
+                className={listStyles.date}
+            />
+            <input
+                type="date"
+                value={to}
+                onChange={(e) => { setTo(e.target.value); setPageNumber(0) }}
+                className={listStyles.date}
+
             />
           </div>
 
@@ -402,7 +403,7 @@ function AdminTicketAssignmentPage() {
             </div>
 
             <span className={listStyles.resultCount}>
-            Showing {filteredTickets.length} of {tickets.length} on page
+            Showing {tickets.length} of {tickets.length} on page
           </span>
           </div>
 
@@ -415,7 +416,7 @@ function AdminTicketAssignmentPage() {
                   Retry Connection
                 </Button>
               </div>
-          ) : filteredTickets.length === 0 ? (
+          ) : tickets.length === 0 ? (
               <EmptyState
                   icon="🔍"
                   title="No matching tickets found"
@@ -423,7 +424,7 @@ function AdminTicketAssignmentPage() {
               />
           ) : (
               <TicketTable
-                  tickets={filteredTickets}
+                  tickets={tickets}
                   onView={(ticket) => navigate(`/tickets/${ticket.id}`)}
                   subtitle={(ticket) => (ticket.createdByName ? `By ${ticket.createdByName}` : '')}
                   extraColumn={assignmentColumn}

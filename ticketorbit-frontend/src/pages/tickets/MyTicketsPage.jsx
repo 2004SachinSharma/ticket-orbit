@@ -34,7 +34,8 @@ function MyTicketsPage() {
   const [categoryId, setCategoryId] = useState('')
 
   const [categories, setCategories] = useState([])
-
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   useEffect(() => {
     const fetchTickets = async () => {
       setLoading(true)
@@ -50,6 +51,9 @@ function MyTicketsPage() {
             ...(status && { status }),
             ...(priority && { priority }),
             ...(categoryId && { categoryId }),
+            ...(search && { q: search }),
+            ...(from && { from: `${from}T00:00:00` }),
+            ...(to && { to: `${to}T23:59:59` }),
           },
         })
 
@@ -67,20 +71,8 @@ function MyTicketsPage() {
     }
 
     fetchTickets()
-  }, [pageNumber, pageSize, sortBy, sortDir, status, priority, categoryId])
+  }, [pageNumber, pageSize, sortBy, sortDir, status, priority, categoryId, search, from, to])
 
-  // Client-side filter over the loaded page only — the backend doesn't
-  // have a search param yet (that's Day 23), so this only narrows what's
-  // already fetched, not the full result set.
-  const filteredTickets = useMemo(() => {
-    const query = search.toLowerCase()
-    return tickets.filter(
-      (ticket) =>
-        ticket.subject?.toLowerCase().includes(query) ||
-        String(ticket.id).includes(query) ||
-        ticket.categoryName?.toLowerCase().includes(query)
-    )
-  }, [tickets, search])
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -137,6 +129,18 @@ function MyTicketsPage() {
             placeholder="Search tickets..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+          />
+          <input
+              className={styles.date}
+              type="date"
+              value={from}
+              onChange={(e) => { setFrom(e.target.value); setPageNumber(0) }}
+          />
+          <input
+              className={styles.date}
+              type="date"
+              value={to}
+              onChange={(e) => { setTo(e.target.value); setPageNumber(0) }}
           />
         </div>
 
@@ -242,7 +246,7 @@ function MyTicketsPage() {
               Retry
             </Button>
           </div>
-        ) : filteredTickets.length === 0 ? (
+        ) : tickets.length === 0 ? (
           <EmptyState
             title={search ? 'No matching tickets' : 'No tickets yet'}
             description={
@@ -260,7 +264,7 @@ function MyTicketsPage() {
           />
         ) : (
           <TicketTable
-            tickets={filteredTickets}
+            tickets={tickets}
             onView={(ticket) => navigate(`/tickets/${ticket.id}`)}
           />
         )}
