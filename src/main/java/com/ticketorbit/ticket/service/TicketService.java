@@ -4,6 +4,7 @@ import com.ticketorbit.auth.exception.ResourceNotFoundException;
 import com.ticketorbit.category.entity.Category;
 import com.ticketorbit.category.repository.CategoryRepository;
 import com.ticketorbit.common.exception.InvalidStateTransitionException;
+import com.ticketorbit.common.utility.ApplicationUtils;
 import com.ticketorbit.ticket.dto.*;
 import com.ticketorbit.ticket.entity.Ticket;
 import com.ticketorbit.ticket.repository.TicketRepository;
@@ -21,8 +22,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +39,7 @@ public class TicketService {
 private final TicketRepository ticketRepository;
 private final CategoryRepository categoryRepository;
 private final UserRepository userRepository;
-
+private final ApplicationUtils applicationUtils;
 public CustomerTicketResponseDto createTicket(CreateTicketRequestDto request) {
 	
 	Category category = categoryRepository.findById(request.categoryId())
@@ -53,7 +52,7 @@ public CustomerTicketResponseDto createTicket(CreateTicketRequestDto request) {
 	ticket.setCategory(category);
 	ticket.setPriority(request.priority());
 	ticket.setStatus(TicketStatus.OPEN);
-	ticket.setCreatedBy(currentUser());
+	ticket.setCreatedBy(applicationUtils.getCurrentAuthUser());
 	ticket.setSlaState(SlaState.ON_TRACK);
 	
 	return CustomerTicketResponseDto.from(ticketRepository.save(ticket));
@@ -84,7 +83,7 @@ public PageResponseDto getTickets(String sortBy, String sortDirection, int pageN
 	
 	Pageable pageRequest = PageRequest.of(pageNumber, pageSize, sort);
 	
-	User user = currentUser();
+	User user = applicationUtils.getCurrentAuthUser();
 	Role role = user.getRole();
 	
 	Specification<Ticket> specification = (root, query, cb) -> cb.conjunction();
@@ -137,18 +136,15 @@ public PageResponseDto getTickets(String sortBy, String sortDirection, int pageN
 	
 }
 
-public TicketResponseDto getTicketById(long ticketId) {
+public TicketResponseDto getTicketById(Long ticketId) {
 	
-	Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(
-			() -> new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); /*TODO: REMOVE IT*/
-	Long userId = Long.valueOf(authentication.getPrincipal().toString()); /*TODO: REMOVE AND USE THE METHOD TO GET THE CURRENT USER; METHOD DEFINED BELOW. FOLLOWING (DRY)*/
-	
-	Role role = currentUser().getRole();
+	Long userId = applicationUtils.getCurrentAuthUser().getId();
+	Role role = applicationUtils.getCurrentAuthUser().getRole();
 	
 	if (role == Role.CUSTOMER) {
-		if (!Objects.equals(ticket.getCreatedBy().getId(), currentUser().getId())) {
+		if (!Objects.equals(ticket.getCreatedBy().getId(), userId)) {
 			throw new ResourceNotFoundException("Ticket not found");
 		}
 		return CustomerTicketResponseDto.from(ticket);
@@ -156,7 +152,7 @@ public TicketResponseDto getTicketById(long ticketId) {
 	
 	if (role == Role.AGENT) {
 		if (ticket.getAssignedTo() == null ||
-				    !Objects.equals(ticket.getAssignedTo().getId(), currentUser().getId())) {
+				    !Objects.equals(ticket.getAssignedTo().getId(), userId)) {
 			throw new ResourceNotFoundException("Ticket not found");
 		}
 		return StaffTicketResponseDto.from(ticket);
@@ -169,23 +165,24 @@ public TicketResponseDto getTicketById(long ticketId) {
 
 public StaffTicketResponseDto assignTicketToAgent(Long ticketId, AssignTicketRequestDto request) {
 	
-	Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(
-			() -> new ResourceNotFoundException("Ticket not found")
-	);
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
 	User agent = userRepository.findById(request.agentId()).orElseThrow(
 			() -> new ResourceNotFoundException("Agent not found")
 	);
 	
-	if (agent.getRole() != Role.AGENT) {
+	TicketStatus ticketStatus = ticket.getStatus();
+	Role role = agent.getRole();
+	
+	if (role != Role.AGENT) {
 		throw new ResourceNotFoundException("Agent not found");
 	}
-	if (ticket.getStatus() == TicketStatus.CLOSED || ticket.getStatus() == TicketStatus.RESOLVED) {
+	if (ticketStatus == TicketStatus.CLOSED || ticketStatus == TicketStatus.RESOLVED) {
 		throw new InvalidStateTransitionException("Cannot assign or reassign a resolved or closed ticket");
 	}
-	if (ticket.getStatus() == TicketStatus.ASSIGNED ||
-			    ticket.getStatus() == TicketStatus.IN_PROGRESS ||
-			    ticket.getStatus() == TicketStatus.WAITING_FOR_CUSTOMER) {
+	if (ticketStatus == TicketStatus.ASSIGNED ||
+			    ticketStatus == TicketStatus.IN_PROGRESS ||
+			    ticketStatus == TicketStatus.WAITING_FOR_CUSTOMER) {
 		
 		ticket.setAssignedTo(agent);
 		return StaffTicketResponseDto.from(ticketRepository.save(ticket));
@@ -198,10 +195,11 @@ public StaffTicketResponseDto assignTicketToAgent(Long ticketId, AssignTicketReq
 }
 
 public StaffTicketResponseDto updateStatus(Long ticketId, UpdateTicketStatusRequestDto request) {
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	User actor = currentUser();
+	User actor = applicationUtils.getCurrentAuthUser();
+	
+	
 	if (actor.getRole() == Role.AGENT &&
 			    (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), actor.getId()))) {
 		throw new ResourceNotFoundException("Ticket not found");
@@ -224,10 +222,9 @@ public StaffTicketResponseDto updateStatus(Long ticketId, UpdateTicketStatusRequ
 }
 
 public CustomerTicketResponseDto closeTicket(Long ticketId) {
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	if (!Objects.equals(ticket.getCreatedBy().getId(), currentUser().getId())) {
+	if (!Objects.equals(ticket.getCreatedBy().getId(), applicationUtils.getCurrentAuthUser().getId())) {
 		throw new ResourceNotFoundException("Ticket not found");
 	}
 	if (ticket.getStatus() != TicketStatus.RESOLVED) {
@@ -243,12 +240,12 @@ public CustomerTicketResponseDto closeTicket(Long ticketId) {
 
 
 public CustomerTicketResponseDto reopenTicket(Long ticketId) {
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	if (!Objects.equals(ticket.getCreatedBy().getId(), currentUser().getId())) {
+	if (!Objects.equals(ticket.getCreatedBy().getId(), applicationUtils.getCurrentAuthUser().getId())) {
 		throw new ResourceNotFoundException("Ticket not found");
 	}
+
 	if (ticket.getStatus() != TicketStatus.RESOLVED) {
 		throw new InvalidStateTransitionException(
 				"Cannot reopen ticket from status " + ticket.getStatus());
@@ -261,12 +258,11 @@ public CustomerTicketResponseDto reopenTicket(Long ticketId) {
 
 
 public StaffTicketResponseDto updatePriority(Long ticketId, UpdateTicketPriorityRequestDto request) {
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	Long userId = currentUser().getId();
+	Long userId = applicationUtils.getCurrentAuthUser().getId();
 	
-	if (currentUser().getRole() == Role.AGENT
+	if (applicationUtils.getCurrentAuthUser().getRole() == Role.AGENT
 			    && (ticket.getAssignedTo() == null
 					        || !Objects.equals(ticket.getAssignedTo().getId(), userId))) {
 		
@@ -278,12 +274,5 @@ public StaffTicketResponseDto updatePriority(Long ticketId, UpdateTicketPriority
 	return StaffTicketResponseDto.from(ticketRepository.save(ticket));
 	
 }
-
-private User currentUser() {
-	Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
-	return userRepository.findById(userId)
-			       .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-}
-
 
 }

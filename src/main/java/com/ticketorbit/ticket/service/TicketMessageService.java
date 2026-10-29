@@ -1,6 +1,7 @@
 package com.ticketorbit.ticket.service;
 
 import com.ticketorbit.auth.exception.ResourceNotFoundException;
+import com.ticketorbit.common.utility.ApplicationUtils;
 import com.ticketorbit.ticket.dto.TicketMessageRequestDto;
 import com.ticketorbit.ticket.dto.TicketMessageResponseDto;
 import com.ticketorbit.ticket.entity.Ticket;
@@ -13,10 +14,7 @@ import com.ticketorbit.user.entity.Role;
 import com.ticketorbit.user.entity.User;
 import com.ticketorbit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,23 +30,16 @@ public class TicketMessageService {
 private final TicketMessageRepository ticketMessageRepository;
 private final TicketRepository ticketRepository;
 private final UserRepository userRepository;
+private final ApplicationUtils applicationUtils;
 
 public TicketMessageResponseDto sendMessage(Long ticketId, TicketMessageRequestDto request) {
 	
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() ->
-					                             new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
+	
 	
 	// Get the authenticated user's ID from the JWT security context.
-	Authentication authentication =
-			SecurityContextHolder.getContext().getAuthentication();
-	
-	Long userId = Long.valueOf(authentication.getPrincipal().toString());
-	
-	User sender = userRepository.findById(userId)
-			              .orElseThrow(() ->
-					                           new ResourceNotFoundException("User not found"));
-	
+	User sender = applicationUtils.getCurrentAuthUser();
+	Long userId = sender.getId();
 	Role role = sender.getRole();
 	
 	// CUSTOMER can access only their own ticket.
@@ -90,23 +81,19 @@ public TicketMessageResponseDto sendMessage(Long ticketId, TicketMessageRequestD
 @Transactional(readOnly = true)
 public List<TicketMessageResponseDto> getMessages(Long ticketId) {
 	// 1. Fetch ticket
-	Ticket ticket = ticketRepository.findById(ticketId)
-			                .orElseThrow(() ->
-					                             new ResourceNotFoundException("Ticket not found"));
+	Ticket ticket = applicationUtils.getTicketById(ticketId);
 	
-	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-	Long userId = Long.valueOf(authentication.getPrincipal().toString());
-	User user = userRepository.findById(userId).orElseThrow(() ->
-			                                                        new ResourceNotFoundException("Ticket not found"));
+	User user = applicationUtils.getCurrentAuthUser();
+	Long userId = user.getId();
+	Role role = user.getRole();
 	
-	
-	if (user.getRole() == Role.CUSTOMER && !Objects.equals(ticket.getCreatedBy().getId(), user.getId())) {
+	if (role == Role.CUSTOMER && !Objects.equals(ticket.getCreatedBy().getId(), userId)) {
 		throw new ResourceNotFoundException("Ticket not found");
 	}
 	
 	List<TicketMessage> ticketMessagesList = ticketMessageRepository.findByTicketIdOrderByCreatedAtAsc(ticketId);
 	
-	if (user.getRole() == Role.CUSTOMER) {
+	if (role == Role.CUSTOMER) {
 		return ticketMessagesList.stream()
 				       .filter(message -> message.getType() == TicketMessageType.PUBLIC)
 				       .map(TicketMessageResponseDto::from)
@@ -116,11 +103,12 @@ public List<TicketMessageResponseDto> getMessages(Long ticketId) {
 	
 	
 	// Agent receive public messages and internal notes, over a check.
-	if (user.getRole() == Role.AGENT && (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), user.getId()))) {
+	if (role == Role.AGENT && (ticket.getAssignedTo() == null || !Objects.equals(ticket.getAssignedTo().getId(), userId))) {
 		throw new ResourceNotFoundException("Ticket not found");
 	}
 	
-	//At Last Admin receive public messages and internal notes, no any check over the id.
+	//At last if all is fine for Agent then the below one is returned for them!
+	//Along with it the same is for Admin, they receive public messages and internal notes, no any check over the id.
 	
 	return ticketMessagesList.stream()
 			       .map(TicketMessageResponseDto::from)
