@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.AuthenticationException;
@@ -146,6 +147,15 @@ public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismat
                            message,
                            request.getRequestURI())
                    );
+}
+
+@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+public ResponseEntity<ErrorResponse> handleOptimisticLock(ObjectOptimisticLockingFailureException ex, HttpServletRequest req) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(
+            ErrorResponse.of(409, "OPTIMISTIC_LOCK_CONFLICT",
+                    "This ticket was updated by someone else, please refresh and try again",
+                    req.getRequestURI())
+    );
 }
 
 // All that could not be caught in the above specific exceptions will be handled here
