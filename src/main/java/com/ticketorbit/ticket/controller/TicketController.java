@@ -79,9 +79,9 @@ public ResponseEntity<TicketResponseDto> getTicketById(
 
 @PreAuthorize("hasAuthority('ROLE_ADMIN')") /* TODO: Will configure pagination for it soon */
 @PatchMapping("/{ticketId}/assign")
-public ResponseEntity<StaffTicketResponseDto> updateTicket(@PathVariable @NotNull(message = "Id cannot be null") @Positive(message = "Ticket Id must be positive")
+public ResponseEntity<StaffTicketResponseDto> assignTicket(@PathVariable @NotNull(message = "Id cannot be null") @Positive(message = "Ticket Id must be positive")
                                                               Long ticketId,
-                                                              @RequestBody @Valid
+                                                           @RequestBody @Valid
                                                               AssignTicketRequestDto assignTicketRequestDto) {
 	return ResponseEntity.ok(ticketService.assignTicketToAgent(ticketId,assignTicketRequestDto));
 }

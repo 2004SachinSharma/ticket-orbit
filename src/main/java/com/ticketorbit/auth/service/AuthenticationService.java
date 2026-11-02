@@ -5,6 +5,7 @@ import com.ticketorbit.auth.dto.LoginResponseDto;
 import com.ticketorbit.auth.dto.RegisterRequestDto;
 import com.ticketorbit.auth.exception.EmailAlreadyExistsException;
 import com.ticketorbit.auth.security.JwtUtil;
+import com.ticketorbit.common.utility.ApplicationUtils;
 import com.ticketorbit.user.dto.UserDto;
 import com.ticketorbit.user.entity.Role;
 import com.ticketorbit.user.entity.User;
@@ -16,15 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.nio.file.attribute.UserPrincipalNotFoundException;
-import java.util.Optional;
-
-import static io.lettuce.core.KillArgs.Builder.id;
 
 
 @Service
@@ -36,6 +30,7 @@ private final UserRepository userRepository;
 private final PasswordEncoder passwordEncoder;
 private final AuthenticationManager authenticationManager;
 private final JwtUtil jwtUtil;
+private final ApplicationUtils applicationUtilsUtils;
 
 @Transactional
 public UserDto registerUser(RegisterRequestDto registerRequestDto) {
@@ -81,17 +76,7 @@ public LoginResponseDto loginUser(LoginRequestDto loginRequestDto) {
 
 public UserDto getAuthUser() {
 	
-	Authentication authentication =
-			SecurityContextHolder.getContext().getAuthentication();
-	
-	Long id = Long.valueOf(authentication.getPrincipal().toString());
-	
-	User user = userRepository.findById(id)
-			            .orElseThrow(() -> new UsernameNotFoundException(
-					            "Authenticated user not found with id: " + id
-			            ));
-	
-	return UserDto.from(user);
+	return UserDto.from(applicationUtilsUtils.getCurrentAuthUser());
 }
 
 }

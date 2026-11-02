@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,10 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/tickets")
+
 public class TicketMessageController {
 private final TicketMessageService ticketMessageService;
+
 @GetMapping("/{ticketId}/messages")
 ResponseEntity<List<TicketMessageResponseDto>> getTicketMessages(@PathVariable
                                                                  @NotNull(message = "Id cannot be null")
@@ -39,6 +42,6 @@ ResponseEntity<TicketMessageResponseDto> saveTicketMessage(@PathVariable
                                                            @RequestBody
                                                            @Valid
                                                            TicketMessageRequestDto ticketMessageRequestDto) {
-    return ResponseEntity.ok(ticketMessageService.sendMessage(ticketId,ticketMessageRequestDto));
+    return ResponseEntity.status(HttpStatus.CREATED).body(ticketMessageService.sendMessage(ticketId,ticketMessageRequestDto));
 }
 }

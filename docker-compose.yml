@@ -16,6 +16,28 @@ services:
       timeout: 5s
       retries: 5
 
+  backend:
+    build: .
+    container_name: ticketorbit-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://my-postgres:5432/${DATABASE_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "8082:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./ticketorbit-frontend
+    container_name: ticketorbit-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres-data:
     external: true

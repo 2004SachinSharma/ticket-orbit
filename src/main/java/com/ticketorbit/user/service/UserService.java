@@ -24,10 +24,4 @@ public List<UserDto> getUsersByRole(Role role) {
  
  
 }
-
-//private User currentUser() {
-// Long userId = Long.valueOf(SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString());
-// return userRepository.findById(userId)
-//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-//}
 }
