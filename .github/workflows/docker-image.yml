@@ -1,0 +1,72 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout Repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup Java
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # 3. Build Backend JAR
+      - name: Build Backend
+        run: |
+          chmod +x ./mvnw
+          ./mvnw clean package -DskipTests
+
+      # 4. Login to Docker Hub
+      - name: Docker Hub Login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 5. Build Backend Docker Image
+      - name: Build Backend Docker Image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/learncicdbackend-image:latest .
+
+      # 6. Build Frontend Docker Image
+      - name: Build Frontend Docker Image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/learncicdfrontend-image:latest ./frontend/cicdFrontend
+
+      # 7. Push Backend Docker Image
+      - name: Push Backend Image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/learncicdbackend-image:latest
+
+      # 8. Push Frontend Docker Image
+      - name: Push Frontend Image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/learncicdfrontend-image:latest
+
+      # 9. Copy Docker Compose To EC2
+      - name: Copy Docker Compose to EC2
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "compose.prod.yaml"
+          target: "~/deployment/"
+
+      # 10. Deploy to EC2
+      - name: SSH and deploy to EC2
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/deployment
+            sudo docker compose -f compose.prod.yaml pull
+            sudo docker compose -f compose.prod.yaml up -d
