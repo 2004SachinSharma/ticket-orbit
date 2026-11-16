@@ -1,13 +1,11 @@
 services:
-  postgres:
-    image: postgres:latest
-    container_name: my-postgres
+  postgres-service:
+    image: postgres:18
+    container_name: ticketorbit-database-container
     environment:
       POSTGRES_DB: ${DATABASE_NAME}
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-    ports:
-      - "5433:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
     healthcheck:
@@ -16,27 +14,24 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
-    build: .
-    container_name: ticketorbit-backend
+  backend-service:
+    image: sachinthapak/ticketorbit-backend-image:${IMAGE_TAG:-latest}
+    container_name: ticketorbit-backend-container
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://my-postgres:5432/${DATABASE_NAME}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-service:5432/${DATABASE_NAME}
       SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-    ports:
-      - "8082:8081"
+      SERVER_PORT: "8080"
     depends_on:
-      postgres:
+      postgres-service:
         condition: service_healthy
 
-  frontend:
-    build: ./ticketorbit-frontend
-    container_name: ticketorbit-frontend
+  web-service:
+    image: sachinthapak/ticketorbit-frontend-image:${IMAGE_TAG:-latest}
+    container_name: ticketorbit-frontend-container
     ports:
-      - "5173:80"
-    depends_on:
-      - backend
+      - "80:80"
 
 volumes:
   postgres-data:
