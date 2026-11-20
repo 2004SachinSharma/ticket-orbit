@@ -27,6 +27,13 @@ services:
       postgres-service:
         condition: service_healthy
 
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
   web-service:
     image: sachinthapak/ticketorbit-frontend-image:${IMAGE_TAG:-latest}
     container_name: ticketorbit-frontend-container
@@ -39,7 +46,8 @@ services:
       - certbot-conf:/etc/letsencrypt
 
     depends_on:
-      - backend-service
+      backend-service:
+        condition: service_healthy
 
   certbot:
     image: certbot/certbot
