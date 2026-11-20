@@ -3,6 +3,7 @@ package com.ticketorbit.ticket.dto;
 import com.ticketorbit.ticket.ticket_enum.TicketPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CreateTicketRequestDto(
@@ -14,6 +15,7 @@ public record CreateTicketRequestDto(
 		String description,
 		
 		@NotNull(message = "Category is required")
+		@Positive(message = "Agent ID must be positive")
 		Long categoryId,
 		
 		@NotNull(message = "Priority is required")
