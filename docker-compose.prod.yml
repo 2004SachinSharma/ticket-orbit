@@ -1,0 +1,65 @@
+services:
+  postgres-service:
+    image: postgres:18
+    container_name: ticketorbit-database-container
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend-service:
+    image: sachinthapak/ticketorbit-backend-image:${IMAGE_TAG:-latest}
+    container_name: ticketorbit-backend-container
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-service:5432/${DATABASE_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      SERVER_PORT: "8080"
+    depends_on:
+      postgres-service:
+        condition: service_healthy
+
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/actuator/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  web-service:
+    image: sachinthapak/ticketorbit-frontend-image:${IMAGE_TAG:-latest}
+    container_name: ticketorbit-frontend-container
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+
+    depends_on:
+      backend-service:
+        condition: service_healthy
+
+  certbot:
+    image: certbot/certbot
+
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-conf:/etc/letsencrypt
+
+volumes:
+  postgres-data:
+    external: true
+
+  certbot-www:
+
+  certbot-conf:

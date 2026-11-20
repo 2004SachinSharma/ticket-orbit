@@ -41,11 +41,15 @@ http.csrf(csrf -> csrf.disable())
 				                   e.authenticationEntryPoint(errorHandler)//401
 						                   .accessDeniedHandler(errorHandler))//403
 		.authorizeHttpRequests(authorizeRequests -> authorizeRequests
-				                                            .requestMatchers("/api/v1/auth/register/public","/api/v1/auth/test/public","/api/v1/auth/login/public").permitAll()
+				                                            .requestMatchers(
+																	"/api/v1/auth/register/public",
+						                                            "/api/v1/auth/test/public",
+						                                            "/api/v1/auth/login/public").permitAll()
 				                                            .requestMatchers("/v3/api-docs/**",
 						                                            "/v3/api-docs.yaml",
 						                                            "/swagger-ui/**",
 						                                            "/swagger-ui.html").permitAll()
+				                                            .requestMatchers("/actuator/health").permitAll()
 				                                            .anyRequest().authenticated())
 		.addFilterBefore(new JwtTokenValidatorFilter(jwtUtil, errorHandler), UsernamePasswordAuthenticationFilter.class);
 
