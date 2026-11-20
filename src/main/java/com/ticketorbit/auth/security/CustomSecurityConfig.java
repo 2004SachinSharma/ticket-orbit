@@ -35,7 +35,7 @@ SecurityFilterChain SecurityFilterChain(HttpSecurity http,
                                         SecurityErrorHandler errorHandler) throws Exception {
 
 http.csrf(csrf -> csrf.disable())
-		.cors(Customizer.withDefaults())
+//		.cors(Customizer.withDefaults())
 		.sessionManagement(sessionManagement -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 		.exceptionHandling(e->
 				                   e.authenticationEntryPoint(errorHandler)//401
@@ -56,25 +56,7 @@ http.csrf(csrf -> csrf.disable())
 return  http.build();
 }
 
-@Bean
-public CorsConfigurationSource corsConfigurationSource() {
-	CorsConfiguration corsConfiguration = new CorsConfiguration();
-	corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
 
-	corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH"));
-	corsConfiguration.setAllowedHeaders(Arrays.asList("*"));
-
-
-	corsConfiguration.setAllowCredentials(true);
-
-	corsConfiguration.setMaxAge(36000L);
-
-	UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-	source.registerCorsConfiguration("/**", corsConfiguration);
-
-	return source;
-}
 
 @Bean
 CompromisedPasswordChecker compromisedPasswordChecker() {
