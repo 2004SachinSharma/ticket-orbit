@@ -14,7 +14,9 @@ export function getNavItems(role) {
   }
 
   if (role === 'ADMIN') {
-    items.push({ label: 'Ticket Assignment', icon: '⇄', path: '/tickets/admin' })
+    items.push({ label: 'Ticket Assignment', icon: '⇄', path: '/tickets/admin' },
+               { label: 'Manage Users', icon: '⚙', path: '/admin/users' })
+
   }
 
   return items

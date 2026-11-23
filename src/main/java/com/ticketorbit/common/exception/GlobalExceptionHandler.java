@@ -1,13 +1,18 @@
 package com.ticketorbit.common.exception;
 
+import com.ticketorbit.auth.exception.EmailAlreadyExistsException;
 import com.ticketorbit.auth.exception.ResourceNotFoundException;
+import com.ticketorbit.ticket.exception.InvalidStateTransitionException;
+import com.ticketorbit.user.exception.InvalidRoleChangeException;
+import com.ticketorbit.user.exception.LastAdminProtectionException;
+import com.ticketorbit.user.exception.SelfActionForbiddenException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.dialect.lock.OptimisticEntityLockException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.password.CompromisedPasswordException;
 import org.springframework.security.core.AuthenticationException;
@@ -21,17 +26,18 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Instant;
 import java.util.List;
 
-// common/exception/GlobalExceptionHandler.java
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-
-@ExceptionHandler(ApiException.class)
-public ResponseEntity<ErrorResponse> handleApi(ApiException ex, HttpServletRequest req) {
-	return ResponseEntity.status(ex.getStatus())
-			       .body(ErrorResponse.of(ex.getStatus().value(), ex.getCode(),
-					       ex.getMessage(), req.getRequestURI()));
+@ExceptionHandler(EmailAlreadyExistsException.class)
+public ResponseEntity<ErrorResponse> handleDuplicateEmail(EmailAlreadyExistsException ex, HttpServletRequest req) {
+	return ResponseEntity.status(HttpStatus.CONFLICT)
+			       .body(ErrorResponse.of(
+					       409,
+					       ex.getCode(),
+					       ex.getMessage(),
+					       req.getRequestURI()));
 }
 
 // On @Valid failure (for multiple fields)
@@ -121,9 +127,12 @@ public ResponseEntity<ErrorResponse> handleMissingParam(MissingServletRequestPar
 
 @ExceptionHandler(InvalidStateTransitionException.class)
 public ResponseEntity<ErrorResponse> handleInvalidState(InvalidStateTransitionException ex, HttpServletRequest request) {
-	return ResponseEntity.status(HttpStatus.CONFLICT).body(
-			ErrorResponse.of(409, "INVALID_TICKET_STATE", ex.getMessage(), request.getRequestURI())
-	);
+	return ResponseEntity.status(HttpStatus.CONFLICT)
+			       .body(ErrorResponse.of(409,
+					       ex.getCode(),
+					       ex.getMessage(),
+					       request.getRequestURI())
+			       );
 }
 
 @ExceptionHandler(IllegalArgumentException.class)
@@ -148,8 +157,8 @@ public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismat
 			       );
 }
 
-@ExceptionHandler(OptimisticEntityLockException.class)
-public ResponseEntity<ErrorResponse> handleOptimisticLockingViolation(OptimisticEntityLockException ex, HttpServletRequest request) {
+@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+public ResponseEntity<ErrorResponse> handleOptimisticLockingViolation(ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
 	
 	String message = String.format("This ticket was modified by another user. Please refresh and try again '%s'", ex.getMessage());
 	
@@ -159,6 +168,41 @@ public ResponseEntity<ErrorResponse> handleOptimisticLockingViolation(Optimistic
 			message,
 			request.getRequestURI())
 	);
+}
+
+@ExceptionHandler(SelfActionForbiddenException.class)
+public ResponseEntity<ErrorResponse> handleLastAdminProtection(SelfActionForbiddenException ex, HttpServletRequest request) {
+	return ResponseEntity.status(HttpStatus.CONFLICT)
+			       .body(ErrorResponse.of(
+					       409,
+					       ex.getCode(),
+					       ex.getMessage(),
+					       request.getRequestURI())
+			       );
+}
+
+@ExceptionHandler(LastAdminProtectionException.class)
+public ResponseEntity<ErrorResponse> handleLastAdminProtection(LastAdminProtectionException ex, HttpServletRequest request) {
+	return ResponseEntity.status(HttpStatus.CONFLICT)
+			       .body(ErrorResponse.of(
+					       409,
+					       ex.getCode(),
+					       ex.getMessage(),
+					       request.getRequestURI())
+			       );
+}
+
+@ExceptionHandler(InvalidRoleChangeException.class)
+public ResponseEntity<ErrorResponse> handleInvalidRoleChange(InvalidRoleChangeException ex, HttpServletRequest request) {
+	return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+			       .body(ErrorResponse.of(400, ex.getCode(), ex.getMessage(), request.getRequestURI()));
+}
+
+@ExceptionHandler(ApiException.class)
+public ResponseEntity<ErrorResponse> handleApi(ApiException ex, HttpServletRequest req) {
+	return ResponseEntity.status(ex.getStatus())
+			       .body(ErrorResponse.of(ex.getStatus().value(), ex.getCode(),
+					       ex.getMessage(), req.getRequestURI()));
 }
 
 // All that could not be caught in the above specific exceptions will be handled here

@@ -5,6 +5,8 @@
   color: #172033;
   background: #f5f7fb;
 
+  overscroll-behavior: none;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
