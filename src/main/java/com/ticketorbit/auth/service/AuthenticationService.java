@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthenticationService {
 
 private final CompromisedPasswordChecker compromisedPasswordChecker;
@@ -32,7 +33,6 @@ private final AuthenticationManager authenticationManager;
 private final JwtUtil jwtUtil;
 private final ApplicationUtils applicationUtilsUtils;
 
-@Transactional
 public UserDto registerUser(RegisterRequestDto registerRequestDto) {
 	
 	String email = registerRequestDto.email().trim().toLowerCase(); //extract email
@@ -67,8 +67,8 @@ public LoginResponseDto loginUser(LoginRequestDto loginRequestDto) {
 				new UsernamePasswordAuthenticationToken(loginRequestDto.email().trim().toLowerCase(), loginRequestDto.password())
 		);
 	 
-		UserDto user = (UserDto) authenticate.getPrincipal();
-	
+			UserDto user = (UserDto) authenticate.getPrincipal();
+	 
 		String token = jwtUtil.generateJwtToken(authenticate);
 		
 		return new LoginResponseDto(token, user);

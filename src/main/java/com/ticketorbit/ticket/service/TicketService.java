@@ -3,7 +3,7 @@ package com.ticketorbit.ticket.service;
 import com.ticketorbit.auth.exception.ResourceNotFoundException;
 import com.ticketorbit.category.entity.Category;
 import com.ticketorbit.category.repository.CategoryRepository;
-import com.ticketorbit.common.exception.InvalidStateTransitionException;
+import com.ticketorbit.ticket.exception.InvalidStateTransitionException;
 import com.ticketorbit.common.utility.ApplicationUtils;
 import com.ticketorbit.ticket.dto.*;
 import com.ticketorbit.ticket.entity.Ticket;
@@ -59,6 +59,7 @@ public CustomerTicketResponseDto createTicket(CreateTicketRequestDto request) {
 	
 }
 
+@Transactional(readOnly = true)
 public PageResponseDto getTickets(String sortBy, String sortDirection, int pageNumber, int pageSize, TicketStatus status, TicketPriority priority, Long categoryId, Long assignedTo,String q, LocalDateTime from, LocalDateTime to) {
 	Set<String> allowedSortFields = Set.of(
 			"createdAt",
@@ -136,6 +137,7 @@ public PageResponseDto getTickets(String sortBy, String sortDirection, int pageN
 	
 }
 
+@Transactional(readOnly = true)
 public TicketResponseDto getTicketById(Long ticketId) {
 	
 	Ticket ticket = applicationUtils.getTicketById(ticketId);
