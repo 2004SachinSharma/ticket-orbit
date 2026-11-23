@@ -15,7 +15,7 @@ import listStyles from './tickets/TicketListPage.module.css'
 import styles from './AdminTicketAssignmentPage.module.css'
 
 const TICKETS_ENDPOINT = '/api/v1/tickets'
-const AGENTS_ENDPOINT = '/api/v1/users?role=AGENT'
+const AGENTS_ENDPOINT = '/api/v1/admin/users?role=AGENT&pageSize=50'
 const assignTicketEndpoint = (ticketId) => `/api/v1/tickets/${ticketId}/assign`
 
 const STATUSES = [

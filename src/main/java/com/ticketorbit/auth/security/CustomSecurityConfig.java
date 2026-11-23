@@ -41,6 +41,7 @@ http.csrf(csrf -> csrf.disable())
 				                   e.authenticationEntryPoint(errorHandler)//401
 						                   .accessDeniedHandler(errorHandler))//403
 		.authorizeHttpRequests(authorizeRequests -> authorizeRequests
+				                                            .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
 				                                            .requestMatchers(
 																	"/api/v1/auth/register/public",
 						                                            "/api/v1/auth/test/public",
